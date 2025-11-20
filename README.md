@@ -1,87 +1,114 @@
 # Vox-Pathos: Real-time Multimodal Sentiment Analysis
 
-Vox-Pathos is a lightweight, real-time multimodal sentiment analysis microservice designed for CPU-only environments (specifically Google Cloud Run). It processes real-time audio streams to infer sentiment using a combination of linguistic content (Text) and paralinguistic features (Audio/Tone).
+**Vox-Pathos** is a lightweight, real-time multimodal sentiment analysis microservice designed for efficient CPU-only inference. It processes streaming audio to infer sentiment using a combination of **Voice Activity Detection (VAD)** and **Acoustic Analysis**.
 
-## Phase 1: Infrastructure & Ingestion
+## 🚀 Features
 
-This phase establishes the core infrastructure, including the FastAPI application skeleton, WebSocket ingestion endpoint, and a highly optimized Docker environment.
+*   **Real-time Streaming**: WebSocket endpoint (`/ws/analyze`) for continuous audio ingestion.
+*   **Voice Activity Detection (VAD)**:
+    *   Powered by `onnx-community/silero-vad`.
+    *   Automatically segments speech from silence.
+    *   Robust against background noise (tuned threshold).
+*   **Acoustic Sentiment Analysis**:
+    *   Powered by `Xenova/ast-finetuned-speech-commands-v2` (Audio Spectrogram Transformer).
+    *   Analyzes speech segments for acoustic features.
+    *   Optimized ONNX Runtime execution (CPU).
+*   **Dockerized**: Optimized multi-stage build for easy deployment.
 
-### Project Structure
+## 🏗️ Architecture
+
+```mermaid
+graph LR
+    Client[Client (WebSocket)] -->|Audio Stream (PCM)| Server[FastAPI Server]
+    Server -->|Chunk| Buffer[Audio Buffer]
+    Buffer -->|Frame| VAD[Silero VAD]
+    VAD -->|Speech Segment| Acoustic[Acoustic Analyzer (AST)]
+    Acoustic -->|Sentiment Score| Server
+    Server -->|JSON Result| Client
+```
+
+## 📂 Project Structure
 
 ```
 Vox-Pathos/
 ├── app/
-│   ├── __init__.py
 │   ├── main.py           # FastAPI entry point & WebSocket route
-│   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py     # Configuration management
-│   └── services/
-│       ├── __init__.py
-│       └── audio_buffer.py # (Placeholder) Circular buffer for audio
-├── Dockerfile            # Multi-stage build, optimized for CPU
+│   ├── services/
+│   │   ├── vad_iterator.py       # VAD logic (Silero)
+│   │   ├── acoustic_analyzer.py  # Acoustic inference (AST)
+│   │   └── audio_buffer.py       # Circular buffer
+│   └── utils/
+│       └── model_utils.py        # Auto-download models from HuggingFace
+├── models/               # Cached ONNX models (auto-downloaded)
+├── test_client.py        # Verification script
+├── Dockerfile            # CPU-optimized Docker build
 ├── requirements.txt      # Python dependencies
 └── README.md
 ```
 
-### Features (Phase 1)
+## 🛠️ Getting Started
 
-*   **FastAPI Microservice**: High-performance async web framework.
-*   **WebSocket Endpoint**: `/ws/analyze` for real-time binary audio streaming (Int16 PCM).
-*   **Health Check**: `/health` endpoint for Cloud Run readiness probes.
-*   **Docker Optimization**:
-    *   Based on `python:3.10-slim`.
-    *   Pre-installed CPU-only PyTorch (`torch`, `torchaudio`) to minimize image size.
-    *   Multi-stage build to keep the runtime image clean.
-    *   `libsndfile1` installed for audio processing.
+### Prerequisites
+*   **Python 3.10+**
+*   **Docker** (optional, for containerization)
 
-### Getting Started
+### Local Setup
 
-#### Prerequisites
-
-*   Docker installed
-*   Python 3.10+ (for local development)
-
-#### Local Development
-
-1.  **Install Dependencies**:
+1.  **Clone and Setup Environment**:
     ```bash
-    pip install -r requirements.txt
-    # Note: For local dev on Windows/Mac, you might get standard PyTorch.
-    # The Dockerfile specifically installs the CPU-only Linux wheels.
+    git clone <repo-url>
+    cd Vox-Pathos
+    python -m venv venv
+    # Windows
+    .\venv\Scripts\activate
+    # Linux/Mac
+    source venv/bin/activate
     ```
 
-2.  **Run the Server**:
+2.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Run the Server**:
     ```bash
     uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ```
+    *On first run, it will automatically download the necessary ONNX models (~40MB) to the `models/` directory.*
 
-3.  **Test Health Check**:
-    Open [http://localhost:8000/health](http://localhost:8000/health) in your browser.
+### Usage
 
-4.  **Test WebSocket**:
-    You can use a tool like Postman or a simple Python script to send binary audio data to `ws://localhost:8000/ws/analyze`.
+**WebSocket Endpoint**: `ws://localhost:8000/ws/analyze`
 
-#### Docker Build & Run
+**Input Format**:
+*   **Audio**: 16-bit PCM, Mono, 16kHz.
+*   **Chunk Size**: 512 samples (32ms) recommended for VAD stability.
 
-1.  **Build the Image**:
-    ```bash
-    docker build -t vox-pathos .
-    ```
+**Output Format** (JSON):
+```json
+{
+  "sentiment": "neutral",
+  "confidence": 0.95,
+  "raw_class_id": 12
+}
+```
 
-2.  **Run the Container**:
-    ```bash
-    docker run -p 8080:8080 vox-pathos
-    ```
-    The service will be available at `http://localhost:8080`.
+### Verification
+Run the included test client to verify the pipeline:
+```bash
+python test_client.py
+```
+This script generates synthetic audio (white noise) to trigger the VAD and print the analysis results.
 
-### API Endpoints
+## 🐳 Docker
 
-*   `GET /health`: Returns `{"status": "healthy", "service": "Vox-Pathos"}`.
-*   `WS /ws/analyze`: Accepts binary audio streams (16kHz, Mono, Int16 PCM). Returns JSON status updates.
+Build and run the containerized service:
 
-### Next Steps (Phase 2)
+```bash
+docker build -t vox-pathos .
+docker run -p 8080:8080 vox-pathos
+```
+Service available at `http://localhost:8080`.
 
-*   Integrate Silero VAD for voice activity detection.
-*   Integrate Faster-Whisper for ASR.
-*   Integrate DistilBERT and Audio CNN for sentiment analysis.
+## 📜 License
+MIT

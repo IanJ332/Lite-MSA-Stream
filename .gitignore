@@ -1,41 +1,35 @@
-# Python Bytecode
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Dependencies and Virtual Environments
+*.py[cod]
+*$py.class
+*.log
+.env
+.env.*
 venv/
 .venv/
 env/
-.env
 
-# Environment Variables
-.env
-.env.*
-*.log
+# Distribution / Build
+build/
+dist/
+*.egg-info/
 
-# Docker Artifacts and Logs
-.dockerignore # 已经复制到镜像，但通常不需要跟踪其内容
-# Dockerfile 本身是需要的，但构建过程的产物不需要
-docker-compose.yml 
-*.log
+# IDEs
+.vscode/
+.idea/
+*.swp
 
-# Operating System Files
+# Project Specific
+models/
+data/
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Data and Models (关键：避免上传大文件)
-# 您的 ML 模型和数据集应该被忽略，尤其是模型权重文件。
-# 模型文件将通过脚本下载，或存储在云存储中。
-# 在 Phase 2 中，您会下载 Silero VAD 模型和 CNN 模型的权重。
-data/
-models/
-*.pt
-*.pth
-*.h5
-*.onnx
-
-# Build and Distribution
-dist/
-build/
+# Docker
+.dockerignore

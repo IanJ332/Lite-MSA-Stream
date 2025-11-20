@@ -16,6 +16,19 @@ async def health_check():
     """
     return {"status": "healthy", "service": "Vox-Pathos"}
 
+from app.services.vad_iterator import VADIterator
+from app.services.acoustic_analyzer import AcousticAnalyzer
+
+# Global Analyzer Instance
+acoustic_analyzer = None
+
+@app.on_event("startup")
+async def startup_event():
+    global acoustic_analyzer
+    logger.info("Initializing Acoustic Analyzer...")
+    acoustic_analyzer = AcousticAnalyzer()
+    logger.info("Acoustic Analyzer initialized.")
+
 @app.websocket("/ws/analyze")
 async def websocket_endpoint(websocket: WebSocket):
     """
@@ -24,22 +37,34 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logger.info("Client connected")
     
+    # Per-connection VAD state
+    vad_iterator = VADIterator()
+    loop = asyncio.get_running_loop()
+    
     try:
         while True:
             # 接收二进制音频数据 (Int16 PCM) [cite: 15]
-            # 客户端应发送 bytes, 避免 base64 开销 [cite: 16]
             audio_chunk = await websocket.receive_bytes()
             
-            # TODO: 
-            # 1. 放入 RingBuffer
-            # 2. VAD 检测 (Stage 1)
-            # 3. ASR & NLP 推理 (Stage 2 & 3)
+            # 1. VAD Processing
+            speech_segment = vad_iterator.process(audio_chunk)
             
-            # 暂时简单回显数据长度，证明链路通畅
-            await websocket.send_json({
-                "status": "processing",
-                "chunk_size": len(audio_chunk)
-            })
+            if speech_segment:
+                logger.info(f"Detected speech segment: {len(speech_segment)} bytes")
+                
+                # 2. Acoustic Analysis (Blocking -> Async)
+                # Run inference in thread pool to avoid blocking the event loop
+                emotion_result = await loop.run_in_executor(
+                    None, 
+                    acoustic_analyzer.predict, 
+                    speech_segment
+                )
+                
+                # 3. Send Feedback
+                await websocket.send_json({
+                    "type": "acoustic_result",
+                    "emotions": emotion_result
+                })
             
     except WebSocketDisconnect:
         logger.info("Client disconnected")
