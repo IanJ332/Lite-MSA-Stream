@@ -1,0 +1,24 @@
+
+--- Model Inputs ---
+Input 0:
+  Name: input
+  Shape: [None, None]
+  Type: tensor(float)
+Input 1:
+  Name: state
+  Shape: [2, None, 128]
+  Type: tensor(float)
+Input 2:
+  Name: sr
+  Shape: []
+  Type: tensor(int64)
+
+--- Model Outputs ---
+Output 0:
+  Name: output
+  Shape: ['unk__54', 1]
+  Type: tensor(float)
+Output 1:
+  Name: stateN
+  Shape: ['unk__55', 'unk__56', 'unk__57']
+  Type: tensor(float)

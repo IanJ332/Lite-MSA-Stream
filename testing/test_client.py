@@ -3,6 +3,7 @@ import websockets
 import time
 import struct
 import numpy as np
+import json
 
 # --- Configuration ---
 URI = "ws://localhost:8000/ws/analyze"
@@ -35,7 +36,7 @@ async def audio_stream_client():
     """
     Simulate client sending audio stream to verify VAD segmentation and inference.
     """
-    print("--- Phase 2 WebSocket Client Test ---")
+    print("--- Phase 3 WebSocket Client Test ---")
     print(f"Chunk Size: {CHUNK_SIZE} samples ({CHUNK_SIZE_MS} ms)")
     
     try:
@@ -64,13 +65,18 @@ async def audio_stream_client():
                 await asyncio.sleep(CHUNK_SIZE_MS / 1000 * 0.9)
 
             # 3. Listen for Result
-            print("Listening for Acoustic Analysis result...")
+            print("Listening for Analysis result...")
             
             try:
                 # Wait for result
                 result = await asyncio.wait_for(websocket.recv(), timeout=10) 
                 print("\n\n---------------------------------")
-                print(f"Received Result: \n{result}")
+                print("Received Result:")
+                try:
+                    data = json.loads(result)
+                    print(json.dumps(data, indent=2))
+                except:
+                    print(result)
                 print("---------------------------------")
                 
             except asyncio.TimeoutError:

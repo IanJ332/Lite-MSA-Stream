@@ -1,0 +1,150 @@
+:root {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-color: #e0e0e0;
+    --accent-color: #bb86fc;
+    --positive-color: #03dac6;
+    --negative-color: #cf6679;
+    --neutral-color: #bb86fc;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    width: 400px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: var(--accent-color);
+}
+
+header p {
+    color: #888;
+    margin-bottom: 2rem;
+}
+
+.indicator-container {
+    margin-bottom: 2rem;
+}
+
+.indicator {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+}
+
+.indicator.neutral {
+    background-color: rgba(187, 134, 252, 0.1);
+    color: var(--neutral-color);
+    border-color: var(--neutral-color);
+    box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
+}
+
+.indicator.positive {
+    background-color: rgba(3, 218, 198, 0.1);
+    color: var(--positive-color);
+    border-color: var(--positive-color);
+    box-shadow: 0 0 30px rgba(3, 218, 198, 0.4);
+}
+
+.indicator.negative {
+    background-color: rgba(207, 102, 121, 0.1);
+    color: var(--negative-color);
+    border-color: var(--negative-color);
+    box-shadow: 0 0 30px rgba(207, 102, 121, 0.4);
+}
+
+.confidence-bar {
+    height: 6px;
+    background-color: #333;
+    border-radius: 3px;
+    margin: 0.5rem 0;
+    overflow: hidden;
+}
+
+#confidence-fill {
+    height: 100%;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn.start {
+    background-color: var(--positive-color);
+    color: #000;
+}
+
+.btn.stop {
+    background-color: var(--negative-color);
+    color: #000;
+}
+
+.log-container {
+    text-align: left;
+    background-color: #121212;
+    padding: 1rem;
+    border-radius: 6px;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+.log-entry {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5rem;
+}
+
+.log-entry .meta {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.log-entry .text {
+    color: #fff;
+}

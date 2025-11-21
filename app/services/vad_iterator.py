@@ -6,7 +6,7 @@ from app.utils.model_utils import download_model
 logger = logging.getLogger(__name__)
 
 class VADIterator:
-    def __init__(self, threshold: float = 0.002, sampling_rate: int = 16000, min_silence_duration_ms: int = 500):
+    def __init__(self, threshold: float = 0.5, sampling_rate: int = 16000, min_silence_duration_ms: int = 500):
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.min_silence_samples = min_silence_duration_ms * sampling_rate / 1000
@@ -15,30 +15,28 @@ class VADIterator:
         self.triggered = False
         self.current_speech = bytearray()
         self.temp_end = 0
-        self.h = np.zeros((2, 1, 64), dtype=np.float32)
-        self.c = np.zeros((2, 1, 64), dtype=np.float32)
+        
+        # Initialize model state (2, 1, 128) for Silero V5
+        self.state = np.zeros((2, 1, 128), dtype=np.float32)
         
         # Load Model
-        # Using onnx-community/silero-vad as the reliable source
         model_path = download_model(
             repo_id="onnx-community/silero-vad",
             filename="onnx/model.onnx", 
             local_dir="models"
         )
         
-        # Configure Session Options for Concurrency
+        # Configure Session Options
         sess_options = ort.SessionOptions()
         sess_options.intra_op_num_threads = 1
         sess_options.inter_op_num_threads = 1
-        # Disable graph optimizations to prevent potential fusion errors
-        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         
         self.session = ort.InferenceSession(model_path, sess_options)
-        logger.info("VAD Model loaded successfully with single-thread config.")
+        logger.info("VAD Model loaded successfully.")
 
     def reset_states(self):
-        self.h = np.zeros((2, 1, 64), dtype=np.float32)
-        self.c = np.zeros((2, 1, 64), dtype=np.float32)
+        self.state = np.zeros((2, 1, 128), dtype=np.float32)
         self.triggered = False
         self.current_speech = bytearray()
         self.temp_end = 0
@@ -51,7 +49,7 @@ class VADIterator:
             audio_chunk (bytes): Raw PCM audio data (16kHz, Mono, Int16).
             
         Returns:
-            bytes: Complete speech segment if detected, else None.
+            tuple: (bytes or None, float probability)
         """
         # Convert bytes to float32 numpy array
         audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)
@@ -60,29 +58,32 @@ class VADIterator:
         # Add batch dimension: (1, N)
         input_tensor = audio_float32[np.newaxis, :]
         
-        # Run Inference
-        # Silero VAD v5 (onnx-community) uses 'state' (2, 1, 128) instead of h/c
-        # We need to check if the model expects 'state' or 'h'/'c'.
-        # Based on the error "Required inputs (['state']) are missing", it expects 'state'.
-        
-        # Initialize state if not compatible or first run
-        if not hasattr(self, 'state') or self.state.shape != (2, 1, 128):
+        # Ensure state shape is correct
+        if self.state.shape != (2, 1, 128):
              self.state = np.zeros((2, 1, 128), dtype=np.float32)
+
+        # 'sr' must be a scalar (0-D tensor) for this model version
+        sr_tensor = np.array(self.sampling_rate, dtype=np.int64)
 
         ort_inputs = {
             "input": input_tensor,
             "state": self.state,
-            "sr": np.array(self.sampling_rate, dtype=np.int64)
+            "sr": sr_tensor
         }
         
-        # Output is (output, state)
-        out, self.state = self.session.run(None, ort_inputs)
-        speech_prob = out[0][0]
-        
-        # Debug logging to see if VAD is detecting anything
-        logger.info(f"VAD Prob: {speech_prob:.4f}") 
+        speech_prob = 0.0
+        try:
+            # Output is (output, state)
+            out, self.state = self.session.run(None, ort_inputs)
+            speech_prob = out[0][0]
+        except Exception as e:
+            logger.error(f"VAD Inference Error: {e}")
+            logger.error(f"Input Shapes: input={input_tensor.shape}, state={self.state.shape}, sr={sr_tensor.shape}")
+            self.reset_states()
+            return None, 0.0
         
         # State Machine Logic
+        segment = None
         if speech_prob >= self.threshold:
             # Speech detected
             if not self.triggered:
@@ -97,9 +98,7 @@ class VADIterator:
             
             if self.temp_end >= self.min_silence_samples:
                 logger.debug("VAD: Speech ended (silence limit reached).")
-                # Return the full segment (trimming trailing silence could be added here)
                 segment = bytes(self.current_speech)
                 self.reset_states()
-                return segment
                 
-        return None
+        return segment, float(speech_prob)

@@ -115,13 +115,18 @@ class AcousticAnalyzer:
             confidence = float(probs[class_id])
             
             # Map to Sentiment (Matches Notebook: 0=Negative, 1=Neutral, 2=Positive)
-            labels = ["negative", "neutral", "positive"]
+            labels = ["neutral", "positive", "negative"]
             sentiment = labels[class_id] if class_id < len(labels) else "unknown"
             
             return {
                 "sentiment": sentiment,
                 "confidence": round(confidence, 4),
-                "raw_class_id": class_id
+                "raw_class_id": class_id,
+                "scores": {
+                    "neutral": float(probs[0]),
+                    "positive": float(probs[1]),
+                    "negative": float(probs[2])
+                }
             }
             
         except Exception as e:
