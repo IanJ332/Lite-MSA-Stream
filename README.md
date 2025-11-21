@@ -94,18 +94,6 @@ Vox-Pathos/
 ```
 
 ### Verification
-Run the included test client to verify the pipeline:
-```bash
-python test_client.py
-```
-This script generates synthetic audio (white noise) to trigger the VAD and print the analysis results.
-
-## 🐳 Docker
-
-Build and run the containerized service:
-
-```bash
-docker build -t vox-pathos .
 docker run -p 8080:8080 vox-pathos
 ```
 Service available at `http://localhost:8080`.

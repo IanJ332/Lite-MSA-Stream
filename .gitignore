@@ -25,6 +25,33 @@ data/
 *.onnx
 *.pt
 *.pth
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.env
+.env.*
+venv/
+.venv/
+env/
+
+# Distribution / Build
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Project Specific
+models/
+data/
+*.onnx
+*.pt
+*.pth
 *.bin
 
 # OS
@@ -33,3 +60,8 @@ Thumbs.db
 
 # Docker
 .dockerignore
+
+# Debug & Tests
+debug_log.txt
+*.wav
+test_output/
