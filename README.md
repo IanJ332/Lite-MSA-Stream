@@ -60,6 +60,7 @@ Vox-Pathos/
     cd Vox-Pathos
     python -m venv venv
     # Windows
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
     .\venv\Scripts\activate
     # Linux/Mac
     source venv/bin/activate
