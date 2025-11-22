@@ -1,0 +1,16 @@
+WARNING:root:trust_remote_code: True
+Notice: ffmpeg is not installed. torchaudio is used to load audio
+If you want to use ffmpeg backend to load audio, please install it by:
+	sudo apt install ffmpeg # ubuntu
+	# brew install ffmpeg # mac
+Loading Model directly...
+funasr version: 1.2.7.
+Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
+Loading remote code failed: model, No module named 'model'
+Loading ravdess_data/03-01-05-01-01-01-01.wav...
+Traceback (most recent call last):
+  File "C:\Users\yoker\OneDrive\Desktop\Lite-MSA-Stream\debug_sensevoice.py", line 40, in <module>
+    # Prepare audio bytes (Exp 8 style)
+  File "C:\Users\yoker\OneDrive\Desktop\Lite-MSA-Stream\debug_sensevoice.py", line 37, in debug_inference
+    # Experiment 10: Use SenseVoiceService Class
+NameError: name 'res10' is not defined

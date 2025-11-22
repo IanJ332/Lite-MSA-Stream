@@ -32,7 +32,6 @@ class SenseVoiceService:
                 trust_remote_code=True,
                 device=self.device,
                 disable_update=True,
-                disable_pbar=True
             )
             
             duration = time.time() - start_time
@@ -64,21 +63,34 @@ class SenseVoiceService:
             import numpy as np
             
             # Convert bytes to numpy array (assuming 16kHz mono PCM 16-bit)
-            audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            # Use 32767.0 to ensure range [-1, 1] which SenseVoice prefers for emotion detection
+            audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32767.0
             
             start_time = time.time()
             
             # Run Inference directly on numpy array
             # language="auto", use_itn=True for inverse text normalization (numbers, etc.)
-            res = self.model.generate(
+            # DEBUG: Check audio stats
+            print(f"DEBUG: audio_np stats: min={audio_np.min()}, max={audio_np.max()}, mean={audio_np.mean()}, shape={audio_np.shape}", flush=True)
+            
+            # DEBUG: Init local model to test if self.model is the issue
+            from funasr import AutoModel
+            local_model = AutoModel(
+                model="iic/SenseVoiceSmall",
+                trust_remote_code=True,
+                device="cpu",
+                disable_update=True,
+            )
+            
+            res = local_model.generate(
                 input=audio_np,
                 cache={},
                 language="auto",
                 use_itn=True,
-                batch_size_s=60,
                 merge_vad=False,
-                merge_thr=1.0,
             )
+            
+            print(f"DEBUG: Raw model result: {res}", flush=True)
             
             inference_time = time.time() - start_time
             
@@ -107,7 +119,30 @@ class SenseVoiceService:
             logger.error(f"Inference error: {e}")
             return {"text": "", "sentiment": "error", "confidence": 0.0}
 
-    def _parse_output(self, raw_text: str):
+    def debug_predict_standalone(self, audio_bytes: bytes):
+        print("DEBUG: Running standalone prediction...")
+        import numpy as np
+        from funasr import AutoModel
+        
+        # Exact copy of Exp 8
+        audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32767.0
+        
+        model = AutoModel(
+            model="iic/SenseVoiceSmall",
+            trust_remote_code=True,
+            device="cpu",
+            disable_update=True,
+        )
+        
+        res = model.generate(
+            input=audio_np, 
+            cache={}, 
+            language="auto", 
+            use_itn=True, 
+            merge_vad=False
+        )
+        print(f"DEBUG: Standalone Result: {res}", flush=True)
+        return res
         """
         Parses SenseVoice output to extract sentiment and clean text.
         Example raw: "<|en|><|HAPPY|>Hello world"

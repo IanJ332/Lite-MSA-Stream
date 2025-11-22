@@ -1,0 +1,30 @@
+WARNING:root:trust_remote_code: True
+Notice: ffmpeg is not installed. torchaudio is used to load audio
+If you want to use ffmpeg backend to load audio, please install it by:
+	sudo apt install ffmpeg # ubuntu
+	# brew install ffmpeg # mac
+Loading Model directly...
+funasr version: 1.2.7.
+Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
+Loading remote code failed: model, No module named 'model'
+Loading ravdess_data/03-01-05-01-01-01-01.wav...
+
+--- Exp 1: Standard ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.36it/s]{'load_data': '0.000', 'extract_feat': '0.006', 'forward': '0.298', 'batch_size': '1', 'rtf': '0.076'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.36it/s]rtf_avg: 0.076: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.36it/s]                                                                                          rtf_avg: 0.076: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.35it/s]
+[{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 2: Force English ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.27it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.306', 'batch_size': '1', 'rtf': '0.079'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.27it/s]rtf_avg: 0.079: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.27it/s]                                                                                          rtf_avg: 0.079: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.26it/s]
+[{'key': 'rand_key_1t9EwL56nGisi', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 3: Explicit fs=16000 ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.75it/s]{'load_data': '0.000', 'extract_feat': '0.005', 'forward': '0.364', 'batch_size': '1', 'rtf': '0.093'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.75it/s]rtf_avg: 0.093: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.75it/s]                                                                                          rtf_avg: 0.093: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.75it/s]
+[{'key': 'rand_key_WgNZq6ITZM5jt', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 4: merge_vad=False ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.00it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.333', 'batch_size': '1', 'rtf': '0.085'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.00it/s]rtf_avg: 0.085: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.00it/s]                                                                                          rtf_avg: 0.085: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.99it/s]
+[{'key': 'rand_key_gUe52RvEJgwBu', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 5: Round-trip Conversion ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]{'load_data': '0.000', 'extract_feat': '0.004', 'forward': '0.339', 'batch_size': '1', 'rtf': '0.087'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]rtf_avg: 0.087: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]                                                                                          rtf_avg: 0.087: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.94it/s]
+[{'key': 'rand_key_NO6n9JEC3HqdZ', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]

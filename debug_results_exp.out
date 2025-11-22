@@ -1,0 +1,22 @@
+WARNING:root:trust_remote_code: True
+Notice: ffmpeg is not installed. torchaudio is used to load audio
+If you want to use ffmpeg backend to load audio, please install it by:
+	sudo apt install ffmpeg # ubuntu
+	# brew install ffmpeg # mac
+Loading Model directly...
+funasr version: 1.2.7.
+Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
+Loading remote code failed: model, No module named 'model'
+Loading ravdess_data/03-01-05-01-01-01-01.wav...
+
+--- Exp 1: Standard ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.44it/s]{'load_data': '0.000', 'extract_feat': '0.007', 'forward': '0.291', 'batch_size': '1', 'rtf': '0.075'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.44it/s]rtf_avg: 0.075: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.44it/s]                                                                                          rtf_avg: 0.075: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.44it/s]
+[{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 2: Force English ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.14it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.318', 'batch_size': '1', 'rtf': '0.082'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.14it/s]rtf_avg: 0.082: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.14it/s]                                                                                          rtf_avg: 0.082: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.14it/s]
+[{'key': 'rand_key_1t9EwL56nGisi', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+
+--- Exp 3: Explicit fs=16000 ---
+  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.21it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.312', 'batch_size': '1', 'rtf': '0.080'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.21it/s]rtf_avg: 0.080: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.21it/s]                                                                                          rtf_avg: 0.080: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.20it/s]
+[{'key': 'rand_key_WgNZq6ITZM5jt', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]

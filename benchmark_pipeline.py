@@ -7,13 +7,10 @@ import soundfile as sf
 from scipy import signal
 from difflib import SequenceMatcher
 import string
-from app.services.transcription_service import TranscriptionService
-from app.services.acoustic_analyzer import AcousticAnalyzer
-from app.services.text_sentiment_analyzer import TextSentimentAnalyzer
+from app.services.sensevoice_service import SenseVoiceService
 
 # Constants
 DATA_DIR = "ravdess_data"
-ALPHA = 0.7 # Fusion Weight for Text
 TARGET_SR = 16000
 
 # Mappings
@@ -54,11 +51,9 @@ def text_similarity(a, b):
     return SequenceMatcher(None, a_clean, b_clean).ratio()
 
 async def run_benchmark():
-    print("--- Initializing Services ---")
-    asr_service = TranscriptionService()
-    acoustic_service = AcousticAnalyzer()
-    text_service = TextSentimentAnalyzer()
-    print("--- Services Ready ---\n")
+    print("--- Initializing SenseVoice Service ---")
+    sensevoice_service = SenseVoiceService(device="cpu")
+    print("--- Service Ready ---\n")
     
     wav_files = glob.glob(os.path.join(DATA_DIR, "*.wav"))
     if not wav_files:
@@ -77,10 +72,13 @@ async def run_benchmark():
         'negative': {'positive': 0, 'neutral': 0, 'negative': 0}
     }
 
-    print(f"Starting Benchmark on {len(wav_files)} files...")
+    # Filter for specific debug file
+    target_file = "03-01-05-01-01-01-01.wav"
+    wav_files = [f for f in wav_files if os.path.basename(f) == target_file]
     
-    # Limit to subset for speed if needed, e.g., first 100
-    wav_files = wav_files[:100] 
+    if not wav_files:
+        print(f"Target file {target_file} not found!")
+        return 
     
     for file_path in wav_files:
         filename = os.path.basename(file_path)
@@ -110,29 +108,30 @@ async def run_benchmark():
             pcm_data = (waveform * 32767).clip(-32768, 32767).astype(np.int16)
             audio_bytes = pcm_data.tobytes()
             
+            # 2. Run Pipeline (Unified)
+            # result = sensevoice_service.predict(audio_bytes)
+            raw_res = sensevoice_service.debug_predict_standalone(audio_bytes)
+            
+            # Mock result for benchmark loop
+            transcript = ""
+            pred_emotion = "neutral"
+            
+            if raw_res and isinstance(raw_res, list):
+                raw_text = raw_res[0].get("text", "")
+                transcript = raw_text # Raw text for now
+                print(f"DEBUG: Standalone Raw: {raw_text}", flush=True)
+                
+                if "ANGRY" in raw_text or "negative" in raw_text:
+                     pred_emotion = "negative"
+                elif "HAPPY" in raw_text or "positive" in raw_text:
+                     pred_emotion = "positive"
+                elif "SAD" in raw_text:
+                     pred_emotion = "negative"
+            
         except Exception as e:
-            print(f"Error processing {filename}: {e}")
+            print(f"Error processing {filename}: {e}", flush=True)
             continue
             
-        # 2. Run Pipeline
-        # ASR
-        transcript = asr_service.transcribe(audio_bytes)
-        
-        # Acoustic
-        acoustic_result = acoustic_service.predict(audio_bytes)
-        
-        # Text Sentiment
-        text_result = text_service.predict(transcript)
-        
-        # Fusion
-        fused_scores = {}
-        for label in ["positive", "negative", "neutral"]:
-            text_p = text_result["scores"].get(label, 0.0)
-            audio_p = acoustic_result["scores"].get(label, 0.0)
-            fused_scores[label] = (ALPHA * text_p) + ((1 - ALPHA) * audio_p)
-        
-        pred_emotion = max(fused_scores, key=fused_scores.get)
-        
         # 3. Calculate Metrics
         # ASR
         sim_score = text_similarity(truth_text, transcript)
@@ -144,26 +143,29 @@ async def run_benchmark():
         
         confusion[truth_emotion][pred_emotion] += 1
         
-        print(f"[{total_files}] {filename} | Truth: {truth_emotion} | Pred: {pred_emotion} | ASR Sim: {sim_score:.2f}")
-        print(f"    Transcript: {transcript}")
+        print(f"[{total_files}] {filename} | Truth: {truth_emotion} | Pred: {pred_emotion} | ASR Sim: {sim_score:.2f}", flush=True)
+        print(f"    Transcript: {transcript}", flush=True)
 
     # Final Report
     avg_asr = total_asr_score / total_files if total_files > 0 else 0
     acc_sentiment = correct_sentiment / total_files if total_files > 0 else 0
     
-    print("\n" + "="*40)
-    print("       BENCHMARK RESULTS       ")
-    print("="*40)
-    print(f"Total Files Processed: {total_files}")
-    print(f"Speech Recognition Accuracy (Similarity): {avg_asr*100:.2f}%")
-    print(f"Emotion Recognition Accuracy: {acc_sentiment*100:.2f}%")
-    print("-" * 40)
-    print("Confusion Matrix (Truth \\ Pred):")
-    print(f"{'':<10} {'Pos':<8} {'Neu':<8} {'Neg':<8}")
-    for truth in ['positive', 'neutral', 'negative']:
-        row = confusion[truth]
-        print(f"{truth:<10} {row['positive']:<8} {row['neutral']:<8} {row['negative']:<8}")
-    print("="*40)
+    with open("benchmark_results_direct.txt", "w", encoding="utf-8") as f:
+        f.write("\n" + "="*40 + "\n")
+        f.write("       BENCHMARK RESULTS       \n")
+        f.write("="*40 + "\n")
+        f.write(f"Total Files Processed: {total_files}\n")
+        f.write(f"Speech Recognition Accuracy (Similarity): {avg_asr*100:.2f}%\n")
+        f.write(f"Emotion Recognition Accuracy: {acc_sentiment*100:.2f}%\n")
+        f.write("-" * 40 + "\n")
+        f.write("Confusion Matrix (Truth \\ Pred):\n")
+        f.write(f"{'':<10} {'Pos':<8} {'Neu':<8} {'Neg':<8}\n")
+        for truth in ['positive', 'neutral', 'negative']:
+            row = confusion[truth]
+            f.write(f"{truth:<10} {row['positive']:<8} {row['neutral']:<8} {row['negative']:<8}\n")
+        f.write("="*40 + "\n")
+    
+    print("Benchmark complete. Results saved to benchmark_results_direct.txt")
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

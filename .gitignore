@@ -41,3 +41,7 @@ debug_log.txt
 *_log.txt
 *.wav
 test_output/
+
+# Logs
+logs/
+*.jsonl

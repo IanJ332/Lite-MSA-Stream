@@ -1,0 +1,16 @@
+WARNING:root:trust_remote_code: True
+Notice: ffmpeg is not installed. torchaudio is used to load audio
+If you want to use ffmpeg backend to load audio, please install it by:
+	sudo apt install ffmpeg # ubuntu
+	# brew install ffmpeg # mac
+Initializing Service...
+funasr version: 1.2.7.
+Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
+Loading remote code failed: model, No module named 'model'
+Loading ravdess_data/03-01-05-01-01-01-01.wav...
+Running Prediction...
+
+--- Result ---
+Text: Kids are talking by the door.
+Sentiment: neutral
+Raw Output: <|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.
