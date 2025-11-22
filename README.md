@@ -1,47 +1,32 @@
-# Vox-Pathos: Real-time Multimodal Sentiment Analysis
+# Lite-MSA-Stream: Real-time Multimodal Sentiment Analysis
 
-**Vox-Pathos** is a lightweight, real-time multimodal sentiment analysis microservice designed for efficient CPU-only inference. It processes streaming audio to infer sentiment using a combination of **Voice Activity Detection (VAD)** and **Acoustic Analysis**.
+**Lite-MSA-Stream** (formerly Vox-Pathos) is a lightweight, real-time multimodal sentiment analysis microservice. It processes streaming audio to infer sentiment using **SenseVoice** (Unified Speech Foundation Model) for simultaneous ASR (Speech-to-Text) and SER (Speech Emotion Recognition).
 
 ## 🚀 Features
 
 *   **Real-time Streaming**: WebSocket endpoint (`/ws/analyze`) for continuous audio ingestion.
-*   **Voice Activity Detection (VAD)**:
-    *   Powered by `onnx-community/silero-vad`.
-    *   Automatically segments speech from silence.
-    *   Robust against background noise (tuned threshold).
-*   **Acoustic Sentiment Analysis**:
-    *   Powered by `Xenova/ast-finetuned-speech-commands-v2` (Audio Spectrogram Transformer).
-    *   Analyzes speech segments for acoustic features.
-    *   Optimized ONNX Runtime execution (CPU).
-*   **Dockerized**: Optimized multi-stage build for easy deployment.
-
-## 🏗️ Architecture
-
-```mermaid
-graph LR
-    Client[Client (WebSocket)] -->|Audio Stream (PCM)| Server[FastAPI Server]
-    Server -->|Chunk| Buffer[Audio Buffer]
-    Buffer -->|Frame| VAD[Silero VAD]
-    VAD -->|Speech Segment| Acoustic[Acoustic Analyzer (AST)]
-    Acoustic -->|Sentiment Score| Server
-    Server -->|JSON Result| Client
-```
+*   **Unified Architecture**:
+    *   Powered by **SenseVoiceSmall**.
+    *   Simultaneous ASR and Emotion Recognition.
+    *   Robust against background noise and accents.
+*   **Legacy Support** (Optional):
+    *   Silero VAD + Whisper + DistilBERT + AST (Phase 1/2 architecture).
+*   **Dockerized**: Optimized build for easy deployment.
 
 ## 📂 Project Structure
 
 ```
-Vox-Pathos/
+Lite-MSA-Stream/
 ├── app/
 │   ├── main.py           # FastAPI entry point & WebSocket route
 │   ├── services/
-│   │   ├── vad_iterator.py       # VAD logic (Silero)
-│   │   ├── acoustic_analyzer.py  # Acoustic inference (AST)
+│   │   ├── sensevoice_service.py # Unified SenseVoice logic (New)
+│   │   ├── vad_iterator.py       # VAD logic
 │   │   └── audio_buffer.py       # Circular buffer
 │   └── utils/
-│       └── model_utils.py        # Auto-download models from HuggingFace
-├── models/               # Cached ONNX models (auto-downloaded)
-├── test_client.py        # Verification script
-├── Dockerfile            # CPU-optimized Docker build
+├── models/               # Cached models
+├── poc_sensevoice.py     # Proof of Concept script
+├── Dockerfile            # Docker build
 ├── requirements.txt      # Python dependencies
 └── README.md
 ```
@@ -50,14 +35,15 @@ Vox-Pathos/
 
 ### Prerequisites
 *   **Python 3.10+**
-*   **Docker** (optional, for containerization)
+*   **FFmpeg** (Required for audio processing)
+*   **Docker** (Optional)
 
 ### Local Setup
 
 1.  **Clone and Setup Environment**:
     ```bash
     git clone <repo-url>
-    cd Vox-Pathos
+    cd Lite-MSA-Stream
     python -m venv venv
     # Windows
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -66,16 +52,23 @@ Vox-Pathos/
     source venv/bin/activate
     ```
 
-2.  **Install Dependencies**:
+2.  **Install FFmpeg** (Windows):
+    ```powershell
+    winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements
+    # Restart your terminal after installation!
+    ```
+
+3.  **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Run the Server**:
+4.  **Run the Server**:
     ```bash
     uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ```
     *On first run, it will automatically download the necessary ONNX models (~40MB) to the `models/` directory.*
+    *Access the API at `http://localhost:8000`*
 
 ### Usage
 
@@ -83,21 +76,24 @@ Vox-Pathos/
 
 **Input Format**:
 *   **Audio**: 16-bit PCM, Mono, 16kHz.
-*   **Chunk Size**: 512 samples (32ms) recommended for VAD stability.
+*   **Chunk Size**: 512 samples (32ms) recommended.
 
 **Output Format** (JSON):
 ```json
 {
-  "sentiment": "neutral",
+  "text": "Hello world",
+  "sentiment": "positive",
   "confidence": 0.95,
-  "raw_class_id": 12
+  "processing_time": 0.15
 }
 ```
 
-### Verification
-docker run -p 8080:8080 vox-pathos
+## 🐳 Docker
+
+Build and run with Docker Compose:
+```bash
+docker-compose up --build
 ```
-Service available at `http://localhost:8080`.
 
 ## 📜 License
 MIT
