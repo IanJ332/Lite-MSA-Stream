@@ -6,10 +6,11 @@ from app.utils.model_utils import download_model
 logger = logging.getLogger(__name__)
 
 class VADIterator:
-    def __init__(self, threshold: float = 0.5, sampling_rate: int = 16000, min_silence_duration_ms: int = 500):
+    def __init__(self, threshold: float = 0.3, sampling_rate: int = 16000, min_silence_duration_ms: int = 1000, min_speech_duration_ms: int = 250):
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.min_silence_samples = min_silence_duration_ms * sampling_rate / 1000
+        self.min_speech_samples = min_speech_duration_ms * sampling_rate / 1000
         
         # State
         self.triggered = False
@@ -97,8 +98,19 @@ class VADIterator:
             self.temp_end += len(audio_int16)
             
             if self.temp_end >= self.min_silence_samples:
-                logger.debug("VAD: Speech ended (silence limit reached).")
-                segment = bytes(self.current_speech)
+                # Silence limit reached, check if speech was long enough
+                # Total samples = len(current_speech) / 2 (bytes to int16)
+                total_samples = len(self.current_speech) / 2
+                
+                # Actual speech duration = Total - Silence
+                speech_duration_samples = total_samples - self.temp_end
+                
+                if speech_duration_samples >= self.min_speech_samples:
+                    logger.info(f"VAD: Speech ended. Duration: {speech_duration_samples/self.sampling_rate:.2f}s")
+                    segment = bytes(self.current_speech)
+                else:
+                    logger.debug(f"VAD: Discarding short noise ({speech_duration_samples/self.sampling_rate:.2f}s)")
+                
                 self.reset_states()
                 
         return segment, float(speech_prob)

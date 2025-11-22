@@ -13,3 +13,4 @@ optimum
 accelerate
 kagglehub
 soundfile
+scipy

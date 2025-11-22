@@ -3,9 +3,10 @@ import glob
 import asyncio
 import numpy as np
 import torch
-import torchaudio
-import torchaudio.transforms as T
+import soundfile as sf
+from scipy import signal
 from difflib import SequenceMatcher
+import string
 from app.services.transcription_service import TranscriptionService
 from app.services.acoustic_analyzer import AcousticAnalyzer
 from app.services.text_sentiment_analyzer import TextSentimentAnalyzer
@@ -47,7 +48,10 @@ def get_ground_truth(filename):
     return emotion, statement
 
 def text_similarity(a, b):
-    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    # Remove punctuation and lower case
+    a_clean = a.lower().translate(str.maketrans('', '', string.punctuation))
+    b_clean = b.lower().translate(str.maketrans('', '', string.punctuation))
+    return SequenceMatcher(None, a_clean, b_clean).ratio()
 
 async def run_benchmark():
     print("--- Initializing Services ---")
@@ -76,7 +80,7 @@ async def run_benchmark():
     print(f"Starting Benchmark on {len(wav_files)} files...")
     
     # Limit to subset for speed if needed, e.g., first 100
-    # wav_files = wav_files[:100] 
+    wav_files = wav_files[:100] 
     
     for file_path in wav_files:
         filename = os.path.basename(file_path)
@@ -87,24 +91,24 @@ async def run_benchmark():
             
         total_files += 1
         
-        # 1. Load Audio correctly (Fixing the header issue)
+        # 1. Load Audio using soundfile (avoids torchcodec issues)
         try:
-            waveform, sr = torchaudio.load(file_path)
+            # Load audio with soundfile
+            waveform, sr = sf.read(file_path, dtype='float32')
+            
+            # Convert to mono if stereo
+            if len(waveform.shape) > 1:
+                waveform = np.mean(waveform, axis=1)
             
             # Resample to 16kHz if needed
             if sr != TARGET_SR:
-                resampler = T.Resample(sr, TARGET_SR)
-                waveform = resampler(waveform)
-            
-            # Mix to mono if needed
-            if waveform.shape[0] > 1:
-                waveform = torch.mean(waveform, dim=0, keepdim=True)
+                num_samples = int(len(waveform) * TARGET_SR / sr)
+                waveform = signal.resample(waveform, num_samples)
                 
             # Convert to Int16 PCM bytes (what the services expect)
-            # Normalize to -1.0 to 1.0 first if not already (torchaudio loads as float32 -1..1)
-            # Then scale to Int16 range
-            pcm_data = (waveform * 32767).clamp(-32768, 32767).to(torch.int16)
-            audio_bytes = pcm_data.numpy().tobytes()
+            # waveform is already float32 in range [-1, 1]
+            pcm_data = (waveform * 32767).clip(-32768, 32767).astype(np.int16)
+            audio_bytes = pcm_data.tobytes()
             
         except Exception as e:
             print(f"Error processing {filename}: {e}")

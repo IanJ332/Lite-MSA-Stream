@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  lite-msa-stream:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lite-msa-stream:latest
+    container_name: lite-msa-stream
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount logs directory to persist logs on host
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

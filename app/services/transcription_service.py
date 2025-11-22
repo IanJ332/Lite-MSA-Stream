@@ -42,8 +42,15 @@ class TranscriptionService:
             audio_float32 = audio_int16.astype(np.float32) / 32768.0
             
             # Run transcription
+            # Run transcription
             # fp16=False is important for CPU
-            result = self.model.transcribe(audio_float32, fp16=False, language="en")
+            # condition_on_previous_text=False prevents hallucinations from previous context
+            result = self.model.transcribe(
+                audio_float32, 
+                fp16=False, 
+                language="en", 
+                condition_on_previous_text=False
+            )
             
             text = result["text"].strip()
             

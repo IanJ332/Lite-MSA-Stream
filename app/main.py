@@ -60,7 +60,7 @@ async def startup_event():
     
     # 2. Transcription Service (ASR)
     logger.info("Initializing Transcription Service (Faster-Whisper)...")
-    transcription_service = TranscriptionService(model_size="tiny.en", device="cpu", compute_type="int8")
+    transcription_service = TranscriptionService(model_size="base.en", device="cpu", compute_type="int8")
     
     # 3. Text Sentiment Analyzer (NLP)
     logger.info("Initializing Text Sentiment Analyzer (DistilBERT)...")
