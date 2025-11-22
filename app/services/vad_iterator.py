@@ -77,6 +77,10 @@ class VADIterator:
             # Output is (output, state)
             out, self.state = self.session.run(None, ort_inputs)
             speech_prob = out[0][0]
+            
+            # Debug logging for VAD probability (every ~1 second)
+            if np.random.rand() < 0.05: 
+                logger.info(f"VAD Prob: {speech_prob:.4f} | Triggered: {self.triggered}")
         except Exception as e:
             logger.error(f"VAD Inference Error: {e}")
             logger.error(f"Input Shapes: input={input_tensor.shape}, state={self.state.shape}, sr={sr_tensor.shape}")

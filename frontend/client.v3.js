@@ -12,7 +12,8 @@ let input;
 let globalStream;
 let websocket;
 
-const WS_URL = 'ws://localhost:8080/ws/analyze';
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_URL = `${protocol}//${window.location.host}/ws/analyze`;
 
 startBtn.addEventListener('click', startRecording);
 stopBtn.addEventListener('click', stopRecording);
