@@ -1,98 +1,99 @@
-# Lite-MSA-Stream: Real-time Multimodal Sentiment Analysis
+# Vox-Pathos: Real-time Multimodal Sentiment Analysis (Ensemble Architecture)
 
-**Lite-MSA-Stream** (formerly Vox-Pathos) is a lightweight, real-time multimodal sentiment analysis microservice. It processes streaming audio to infer sentiment using **SenseVoice** (Unified Speech Foundation Model) for simultaneous ASR (Speech-to-Text) and SER (Speech Emotion Recognition).
+This project implements a high-accuracy, real-time Speech Emotion Recognition (SER) system using an **Ensemble Architecture**. It combines **SenseVoiceSmall** (for ASR and base emotion) with **HuBERT** and **Wav2Vec2** (for robust acoustic features), fused by a custom Neural Network.
 
-## 🚀 Features
+## 🚀 Deployment Guide
 
-*   **Real-time Streaming**: WebSocket endpoint (`/ws/analyze`) for continuous audio ingestion.
-*   **Unified Architecture**:
-    *   Powered by **SenseVoiceSmall**.
-    *   Simultaneous ASR and Emotion Recognition.
-    *   Robust against background noise and accents.
-*   **Legacy Support** (Optional):
-    *   Silero VAD + Whisper + DistilBERT + AST (Phase 1/2 architecture).
-*   **Dockerized**: Optimized build for easy deployment.
+Follow these instructions to set up, train, and run the system on a new machine.
 
-## 📂 Project Structure
+### 1. Prerequisites
+*   **OS**: Windows, Linux, or macOS.
+*   **Python**: 3.10 or higher (Tested on 3.13).
+*   **RAM**: 8GB minimum (16GB recommended for training).
+*   **CPU**: Modern Multi-core CPU (AVX2 support recommended).
 
-```
-Lite-MSA-Stream/
-├── app/
-│   ├── main.py           # FastAPI entry point & WebSocket route
-│   ├── services/
-│   │   ├── sensevoice_service.py # Unified SenseVoice logic
-│   │   └── vad_iterator.py       # VAD logic
-│   └── utils/
-├── frontend/             # Web Client
-├── models/               # Cached models
-├── Dockerfile            # Docker build
-├── requirements.txt      # Python dependencies
-└── README.md
-```
+### 2. Installation
 
-## 🛠️ Getting Started
+1.  **Clone/Copy the Repository**:
+    Ensure all project files are present on the new machine.
 
-### Prerequisites
-*   **Python 3.10+**
-*   **FFmpeg** (Required for audio processing backend)
-*   **Docker** (Optional)
-
-### Local Setup
-
-1.  **Clone and Setup Environment**:
+2.  **Create a Virtual Environment** (Recommended):
     ```bash
-    git clone <repo-url>
-    cd Lite-MSA-Stream
     python -m venv venv
     # Windows
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
     .\venv\Scripts\activate
     # Linux/Mac
     source venv/bin/activate
-    ```
-
-2.  **Install FFmpeg** (Windows):
-    ```powershell
-    winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements
-    # Restart your terminal after installation!
     ```
 
 3.  **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
+    *Note: This will install PyTorch, Transformers, FunASR, and other necessary libraries.*
 
-4.  **Run the Server**:
+---
+
+### 3. Data Preparation (Step 1)
+
+Before you can run the app with high accuracy, you must prepare the data. This step extracts features from the **RAVDESS** dataset using the heavy backbone models (HuBERT/Wav2Vec2) and saves them to a database.
+
+1.  **Ensure Data Exists**:
+    Make sure the `ravdess_data/` folder is in the project root and contains the `.wav` files.
+
+2.  **Run the Preparation Script**:
+    ```bash
+    python scripts/prepare_data.py
+    ```
+
+3.  **Expected Output**:
+    *   You will see a progress bar: `Extracting features (Full Dataset)... 100%|██████| ...`
+    *   **Time**: This process takes **1-2 hours** on a CPU (depending on speed).
+    *   **Success Indicator**: A file named `features.h5` (~2-3 GB) will be created in the project root.
+    *   **Terminal Message**: `Data preparation complete.`
+
+---
+
+### 4. Training the Model (Step 2)
+
+Now that features are extracted, you will train the **Fusion Layer** (the "brain" that combines the models).
+
+1.  **Run the Training Script**:
+    ```bash
+    python train_ensemble.py
+    ```
+
+2.  **Expected Output**:
+    *   You will see training logs for each epoch:
+        ```text
+        Epoch 1/50 - Loss: 1.8421 - Train Acc: 45.20% - Test Acc: 52.10%
+        ...
+        Epoch 50/50 - Loss: 0.3102 - Train Acc: 92.50% - Test Acc: 88.40%
+        ```
+    *   **Time**: This is fast! It should take **5-10 minutes**.
+    *   **Success Indicator**: A file named `fusion_weights.pth` will be created.
+    *   **Terminal Message**: `Training complete. Best Test Accuracy: XX.XX%`
+
+---
+
+### 5. Running the Application (Step 3)
+
+Once `fusion_weights.pth` exists, the application automatically loads it to provide high-accuracy, 8-emotion detection.
+
+1.  **Start the Server**:
     ```bash
     uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ```
-    *On first run, it will automatically download the necessary models to the `models/` directory.*
-    *Access the API at `http://localhost:8000`*
 
-### Usage
+2.  **Access the UI**:
+    *   Open your browser and go to: `http://localhost:8000`
+    *   Click **Start Recording**.
+    *   Adjust the **Model Accuracy** slider to 100% for best results (uses more CPU).
 
-**WebSocket Endpoint**: `ws://localhost:8000/ws/analyze`
+---
 
-**Input Format**:
-*   **Audio**: Float32 PCM, Mono, 16kHz.
-*   **Chunk Size**: 512 samples (32ms) recommended.
+### 6. Troubleshooting
 
-**Output Format** (JSON):
-```json
-{
-  "text": "Hello world",
-  "sentiment": "positive",
-  "confidence": 0.95,
-  "processing_time": 0.15
-}
-```
-
-## 🐳 Docker
-
-Build and run with Docker Compose:
-```bash
-docker-compose up --build
-```
-
-## 📜 License
-MIT
+*   **`ModuleNotFoundError`**: Run `pip install -r requirements.txt` again.
+*   **`fusion_weights.pth not found`**: The app will still run, but it will fall back to the basic SenseVoice model (lower accuracy, fewer emotions). Run Step 4 (Training) to fix this.
+*   **High CPU Usage**: This is normal! The Ensemble model runs 3 deep neural networks in parallel to achieve high accuracy. Use the slider in the UI to lower CPU usage if needed.

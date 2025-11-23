@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 import h5py
 import torch
 import torch.nn as nn
