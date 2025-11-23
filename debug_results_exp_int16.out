@@ -1,82 +1,0 @@
-WARNING:root:trust_remote_code: True
-Notice: ffmpeg is not installed. torchaudio is used to load audio
-If you want to use ffmpeg backend to load audio, please install it by:
-	sudo apt install ffmpeg # ubuntu
-	# brew install ffmpeg # mac
-Loading Model directly...
-funasr version: 1.2.7.
-Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
-Loading remote code failed: model, No module named 'model'
-Loading ravdess_data/03-01-05-01-01-01-01.wav...
-
---- Exp 1: Standard ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.68it/s]{'load_data': '0.000', 'extract_feat': '0.008', 'forward': '0.373', 'batch_size': '1', 'rtf': '0.096'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.68it/s]rtf_avg: 0.096: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.68it/s]                                                                                          rtf_avg: 0.096: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.68it/s]
-[{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 2: Force English ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.85it/s]{'load_data': '0.000', 'extract_feat': '0.005', 'forward': '0.351', 'batch_size': '1', 'rtf': '0.090'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.85it/s]rtf_avg: 0.090: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.85it/s]                                                                                          rtf_avg: 0.090: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.85it/s]
-[{'key': 'rand_key_1t9EwL56nGisi', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 3: Explicit fs=16000 ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.46it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.406', 'batch_size': '1', 'rtf': '0.104'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.46it/s]rtf_avg: 0.104: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.46it/s]                                                                                          rtf_avg: 0.104: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.46it/s]
-[{'key': 'rand_key_WgNZq6ITZM5jt', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 4: merge_vad=False ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.20it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.454', 'batch_size': '1', 'rtf': '0.116'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.20it/s]rtf_avg: 0.116: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.20it/s]                                                                                          rtf_avg: 0.116: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.20it/s]
-[{'key': 'rand_key_gUe52RvEJgwBu', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 5: Round-trip Conversion ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.38it/s]{'load_data': '0.000', 'extract_feat': '0.006', 'forward': '0.419', 'batch_size': '1', 'rtf': '0.108'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.38it/s]rtf_avg: 0.108: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.38it/s]                                                                                          rtf_avg: 0.108: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.38it/s]
-[{'key': 'rand_key_NO6n9JEC3HqdZ', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 6: Direct int16 input ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]Traceback (most recent call last):
-  File "C:\Users\yoker\OneDrive\Desktop\Lite-MSA-Stream\debug_sensevoice.py", line 78, in <module>
-    debug_inference()
-    ~~~~~~~~~~~~~~~^^
-  File "C:\Users\yoker\OneDrive\Desktop\Lite-MSA-Stream\debug_sensevoice.py", line 74, in debug_inference
-    res6 = model.generate(input=audio_np_int16, cache={}, language="auto", use_itn=True, merge_vad=False)
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\funasr\auto\auto_model.py", line 306, in generate
-    return self.inference(
-           ~~~~~~~~~~~~~~^
-        input, input_len=input_len, progress_callback=progress_callback, **cfg
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\funasr\auto\auto_model.py", line 361, in inference
-    res = model.inference(**batch, **kwargs)
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\funasr\models\sense_voice\model.py", line 840, in inference
-    speech, speech_lengths = extract_fbank(
-                             ~~~~~~~~~~~~~^
-        audio_sample_list, data_type=kwargs.get("data_type", "sound"), frontend=frontend
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\funasr\utils\load_utils.py", line 217, in extract_fbank
-    data, data_len = frontend(data, data_len, **kwargs)
-                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\torch\nn\modules\module.py", line 1775, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\torch\nn\modules\module.py", line 1786, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\funasr\frontends\wav_frontend.py", line 133, in forward
-    mat = kaldi.fbank(
-        waveform,
-    ...<7 lines>...
-        snip_edges=self.snip_edges,
-    )
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\torchaudio\compliance\kaldi.py", line 600, in fbank
-    strided_input, signal_log_energy = _get_window(
-                                       ~~~~~~~~~~~^
-        waveform,
-        ^^^^^^^^^
-    ...<10 lines>...
-        preemphasis_coefficient,
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\yoker\AppData\Roaming\Python\Python313\site-packages\torchaudio\compliance\kaldi.py", line 180, in _get_window
-    rand_gauss = torch.randn(strided_input.shape, device=device, dtype=dtype)
-NotImplementedError: "normal_kernel_cpu" not implemented for 'Short'
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]

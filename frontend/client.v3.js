@@ -74,15 +74,8 @@ async function startAudioCapture() {
             if (websocket && websocket.readyState === WebSocket.OPEN) {
                 const inputData = e.inputBuffer.getChannelData(0);
 
-                // Convert Float32 to Int16
-                const buffer = new ArrayBuffer(inputData.length * 2);
-                const view = new DataView(buffer);
-                for (let i = 0; i < inputData.length; i++) {
-                    const s = Math.max(-1, Math.min(1, inputData[i]));
-                    view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); // little-endian
-                }
-
-                websocket.send(buffer);
+                // Send Float32 directly (required for accurate backend emotion recognition on CPU)
+                websocket.send(inputData.buffer);
             }
         };
 

@@ -47,14 +47,14 @@ class VADIterator:
         Process an audio chunk and return a speech segment if a sentence is completed.
         
         Args:
-            audio_chunk (bytes): Raw PCM audio data (16kHz, Mono, Int16).
+            audio_chunk (bytes): Raw PCM audio data (16kHz, Mono, Float32).
             
         Returns:
             tuple: (bytes or None, float probability)
         """
         # Convert bytes to float32 numpy array
-        audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)
-        audio_float32 = audio_int16.astype(np.float32) / 32768.0
+        # Input is now raw Float32 bytes from frontend
+        audio_float32 = np.frombuffer(audio_chunk, dtype=np.float32)
         
         # Add batch dimension: (1, N)
         input_tensor = audio_float32[np.newaxis, :]
@@ -99,12 +99,12 @@ class VADIterator:
         elif self.triggered:
             # Silence during speech
             self.current_speech.extend(audio_chunk)
-            self.temp_end += len(audio_int16)
+            self.temp_end += len(audio_float32)
             
             if self.temp_end >= self.min_silence_samples:
                 # Silence limit reached, check if speech was long enough
-                # Total samples = len(current_speech) / 2 (bytes to int16)
-                total_samples = len(self.current_speech) / 2
+                # Total samples = len(current_speech) / 4 (bytes to float32)
+                total_samples = len(self.current_speech) / 4
                 
                 # Actual speech duration = Total - Silence
                 speech_duration_samples = total_samples - self.temp_end

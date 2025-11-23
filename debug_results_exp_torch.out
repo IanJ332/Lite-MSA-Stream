@@ -1,58 +1,0 @@
-WARNING:root:trust_remote_code: True
-Notice: ffmpeg is not installed. torchaudio is used to load audio
-If you want to use ffmpeg backend to load audio, please install it by:
-	sudo apt install ffmpeg # ubuntu
-	# brew install ffmpeg # mac
-Loading Model directly...
-funasr version: 1.2.7.
-Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
-Loading remote code failed: model, No module named 'model'
-Loading ravdess_data/03-01-05-01-01-01-01.wav...
-
---- Exp 1: Standard ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]{'load_data': '0.000', 'extract_feat': '0.009', 'forward': '0.344', 'batch_size': '1', 'rtf': '0.088'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]                                                                                          rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]
-[{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 2: Force English ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]{'load_data': '0.000', 'extract_feat': '0.004', 'forward': '0.339', 'batch_size': '1', 'rtf': '0.087'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]rtf_avg: 0.087: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.95it/s]                                                                                          rtf_avg: 0.087: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.94it/s]
-[{'key': 'rand_key_1t9EwL56nGisi', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 3: Explicit fs=16000 ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  3.01it/s]{'load_data': '0.000', 'extract_feat': '0.005', 'forward': '0.332', 'batch_size': '1', 'rtf': '0.085'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.01it/s]rtf_avg: 0.085: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.01it/s]                                                                                          rtf_avg: 0.085: 100%|[34m##########[0m| 1/1 [00:00<00:00,  3.01it/s]
-[{'key': 'rand_key_WgNZq6ITZM5jt', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 4: merge_vad=False ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.92it/s]{'load_data': '0.000', 'extract_feat': '0.004', 'forward': '0.343', 'batch_size': '1', 'rtf': '0.088'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.92it/s]rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.92it/s]                                                                                          rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.91it/s]
-[{'key': 'rand_key_gUe52RvEJgwBu', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 5: Round-trip Conversion ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.83it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.354', 'batch_size': '1', 'rtf': '0.091'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.83it/s]rtf_avg: 0.091: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.83it/s]                                                                                          rtf_avg: 0.091: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.82it/s]
-[{'key': 'rand_key_NO6n9JEC3HqdZ', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 7: Large floats (no normalization) ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]{'load_data': '0.000', 'extract_feat': '0.006', 'forward': '0.344', 'batch_size': '1', 'rtf': '0.088'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]                                                                                          rtf_avg: 0.088: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.90it/s]
-[{'key': 'rand_key_6J6afU1zT0YQO', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 8: Divide by 32767.0 ---
-DEBUG: audio_bytes[:10]: 00000000000000000000
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.61it/s]{'load_data': '0.000', 'extract_feat': '0.005', 'forward': '0.383', 'batch_size': '1', 'rtf': '0.098'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.61it/s]rtf_avg: 0.098: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.61it/s]                                                                                          rtf_avg: 0.098: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.60it/s]
-[{'key': 'rand_key_aNF03vpUuT3em', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 9: Exact Service Params ---
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.35it/s]{'load_data': '0.000', 'extract_feat': '0.003', 'forward': '0.426', 'batch_size': '1', 'rtf': '0.109'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.35it/s]rtf_avg: 0.109: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.35it/s]                                                                                          rtf_avg: 0.109: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.35it/s]
-WARNING:root:trust_remote_code: True
-[{'key': 'rand_key_6KopZ9jZICffu', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-
---- Exp 10: SenseVoiceService Class ---
-funasr version: 1.2.7.
-Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
-Loading remote code failed: model, No module named 'model'
-DEBUG: audio_np stats: min=-0.14728233218193054, max=0.18097476661205292, mean=1.612708183529321e-05, shape=(61928,)
-WARNING:root:trust_remote_code: True
-funasr version: 1.2.7.
-Downloading Model from https://www.modelscope.cn to directory: C:\Users\yoker\.cache\modelscope\hub\models\iic\SenseVoiceSmall
-Loading remote code failed: model, No module named 'model'
-  0%|[34m          [0m| 0/1 [00:00<?, ?it/s]100%|[34m##########[0m| 1/1 [00:00<00:00,  2.73it/s]{'load_data': '0.000', 'extract_feat': '0.005', 'forward': '0.366', 'batch_size': '1', 'rtf': '0.094'}, : 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.73it/s]rtf_avg: 0.094: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.73it/s]                                                                                          rtf_avg: 0.094: 100%|[34m##########[0m| 1/1 [00:00<00:00,  2.73it/s]
-DEBUG: Raw model result: [{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|EMO_UNKNOWN|><|Speech|><|withitn|>Kids are talking by the door.'}]
-ERROR:vox-pathos:Inference error: 'SenseVoiceService' object has no attribute '_parse_output'
-{'text': '', 'sentiment': 'error', 'confidence': 0.0}

@@ -24,7 +24,6 @@ class SenseVoiceService:
     def _load_model(self):
         try:
             logger.info(f"Loading SenseVoice model from {self.model_dir} on {self.device}...")
-            start_time = time.time()
             
             # Load model using FunASR's AutoModel
             self.model = AutoModel(
@@ -34,60 +33,97 @@ class SenseVoiceService:
                 disable_update=True,
             )
             
+            start_time = time.time()
             duration = time.time() - start_time
             logger.info(f"SenseVoice model loaded successfully in {duration:.2f}s.")
+
+            try:
+                import soundfile as sf
+                import numpy as np
+                from scipy import signal
+                import glob
+                import os
+
+                # Find a warmup file (use a RAVDESS file if available, or a bundled warmup.wav)
+                warmup_file = "warmup.wav"
+                if not os.path.exists(warmup_file):
+                    # Fallback to finding a RAVDESS file
+                    ravdess_files = glob.glob("ravdess_data/**/*.wav", recursive=True)
+                    if ravdess_files:
+                        warmup_file = ravdess_files[0]
+                
+                if os.path.exists(warmup_file):
+                    print(f"DEBUG: Using warmup file: {warmup_file}")
+                    audio_warmup, sr_warmup = sf.read(warmup_file, dtype='float32')
+                    
+                    # Handle multi-channel
+                    if len(audio_warmup.shape) > 1:
+                        audio_warmup = np.mean(audio_warmup, axis=1)
+                        
+                    # Resample to 16000 Hz
+                    if sr_warmup != 16000:
+                        num_samples = int(len(audio_warmup) * 16000 / sr_warmup)
+                        audio_warmup = signal.resample(audio_warmup, num_samples)
+                    
+                    # Run inference
+                    self.model.generate(
+                        input=audio_warmup,
+                        cache={},
+                        language="auto",
+                        use_itn=True
+                    )
+                    print("DEBUG: Warmup completed successfully.")
+                else:
+                    print("DEBUG: No warmup file found. Emotion recognition may be unstable.")
+                    
+            except Exception as w_e:
+                print(f"DEBUG: Warmup failed: {w_e}")
             
         except Exception as e:
             logger.error(f"Failed to load SenseVoice model: {e}")
             raise e
 
-    def predict(self, audio_bytes: bytes) -> dict:
+
+    def predict(self, audio_input) -> dict:
         """
-        Runs inference on the provided audio bytes.
+        Runs inference on the provided audio input.
+        Args:
+            audio_input: bytes (PCM 16-bit) or np.ndarray (float32)
         Returns a dictionary with text, sentiment, and confidence.
         """
         if not self.model:
             logger.error("Model not initialized.")
             return {"text": "", "sentiment": "neutral", "confidence": 0.0}
 
-        logger.info(f"SenseVoice Predict called with {len(audio_bytes)} bytes")
+        input_len = len(audio_input) if isinstance(audio_input, (bytes, str)) else audio_input.shape[0]
+        logger.info(f"SenseVoice Predict called with input length {input_len}")
 
         try:
-            # FunASR expects a file path or numpy array. 
-            # For streaming/bytes, we might need to save to a temp file or use a specific input handler.
-            # To keep it robust for this implementation, we'll save to a temp file.
-            # Optimization: In the future, pass numpy array directly if supported.
-            
-            import tempfile
-            import soundfile as sf
             import numpy as np
-            
-            # Convert bytes to numpy array (assuming 16kHz mono PCM 16-bit)
-            # Use 32767.0 to ensure range [-1, 1] which SenseVoice prefers for emotion detection
-            audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32767.0
             
             start_time = time.time()
             
+            # Handle input type
+            if isinstance(audio_input, bytes):
+                # Assume Float32 bytes from frontend or VADIterator
+                audio_np = np.frombuffer(audio_input, dtype=np.float32)
+            elif isinstance(audio_input, np.ndarray):
+                # Assume already float32 and normalized
+                audio_np = audio_input.astype(np.float32)
+            else:
+                logger.error(f"Unsupported input type: {type(audio_input)}")
+                return {"text": "", "sentiment": "error", "confidence": 0.0}
+
             # Run Inference directly on numpy array
             # language="auto", use_itn=True for inverse text normalization (numbers, etc.)
             # DEBUG: Check audio stats
             print(f"DEBUG: audio_np stats: min={audio_np.min()}, max={audio_np.max()}, mean={audio_np.mean()}, shape={audio_np.shape}", flush=True)
             
-            # DEBUG: Init local model to test if self.model is the issue
-            from funasr import AutoModel
-            local_model = AutoModel(
-                model="iic/SenseVoiceSmall",
-                trust_remote_code=True,
-                device="cpu",
-                disable_update=True,
-            )
-            
-            res = local_model.generate(
+            res = self.model.generate(
                 input=audio_np,
                 cache={},
                 language="auto",
                 use_itn=True,
-                merge_vad=False,
             )
             
             print(f"DEBUG: Raw model result: {res}", flush=True)
@@ -118,31 +154,7 @@ class SenseVoiceService:
         except Exception as e:
             logger.error(f"Inference error: {e}")
             return {"text": "", "sentiment": "error", "confidence": 0.0}
-
-    def debug_predict_standalone(self, audio_bytes: bytes):
-        print("DEBUG: Running standalone prediction...")
-        import numpy as np
-        from funasr import AutoModel
-        
-        # Exact copy of Exp 8
-        audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32767.0
-        
-        model = AutoModel(
-            model="iic/SenseVoiceSmall",
-            trust_remote_code=True,
-            device="cpu",
-            disable_update=True,
-        )
-        
-        res = model.generate(
-            input=audio_np, 
-            cache={}, 
-            language="auto", 
-            use_itn=True, 
-            merge_vad=False
-        )
-        print(f"DEBUG: Standalone Result: {res}", flush=True)
-        return res
+    def _parse_output(self, raw_text: str):
         """
         Parses SenseVoice output to extract sentiment and clean text.
         Example raw: "<|en|><|HAPPY|>Hello world"

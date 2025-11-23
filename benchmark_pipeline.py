@@ -50,7 +50,22 @@ def text_similarity(a, b):
     b_clean = b.lower().translate(str.maketrans('', '', string.punctuation))
     return SequenceMatcher(None, a_clean, b_clean).ratio()
 
-async def run_benchmark():
+    print("Benchmark complete. Results saved to benchmark_results_direct.txt")
+
+if __name__ == "__main__":
+    # asyncio.run(run_benchmark())
+    # Run synchronously to avoid potential asyncio/funasr conflicts
+    import asyncio
+    # Hack to run async function synchronously if needed, but better to make it sync.
+    # Since SenseVoiceService is sync, we can just run the body.
+    # But run_benchmark is async def.
+    # Let's just run it with asyncio.run but ensure no other async stuff is happening?
+    # Wait, I want to REMOVE asyncio.
+    
+    # Redefine run_benchmark as sync
+    pass
+
+def run_benchmark_sync():
     print("--- Initializing SenseVoice Service ---")
     sensevoice_service = SenseVoiceService(device="cpu")
     print("--- Service Ready ---\n")
@@ -105,28 +120,19 @@ async def run_benchmark():
                 
             # Convert to Int16 PCM bytes (what the services expect)
             # waveform is already float32 in range [-1, 1]
-            pcm_data = (waveform * 32767).clip(-32768, 32767).astype(np.int16)
-            audio_bytes = pcm_data.tobytes()
+            # pcm_data = (waveform * 32767).clip(-32768, 32767).astype(np.int16)
+            # audio_bytes = pcm_data.tobytes()
             
             # 2. Run Pipeline (Unified)
-            # result = sensevoice_service.predict(audio_bytes)
-            raw_res = sensevoice_service.debug_predict_standalone(audio_bytes)
+            # Pass waveform directly to avoid Int16 quantization loss on CPU
+            result = sensevoice_service.predict(waveform)
             
-            # Mock result for benchmark loop
-            transcript = ""
-            pred_emotion = "neutral"
+            transcript = result["text"]
+            pred_emotion = result["sentiment"]
             
-            if raw_res and isinstance(raw_res, list):
-                raw_text = raw_res[0].get("text", "")
-                transcript = raw_text # Raw text for now
-                print(f"DEBUG: Standalone Raw: {raw_text}", flush=True)
-                
-                if "ANGRY" in raw_text or "negative" in raw_text:
-                     pred_emotion = "negative"
-                elif "HAPPY" in raw_text or "positive" in raw_text:
-                     pred_emotion = "positive"
-                elif "SAD" in raw_text:
-                     pred_emotion = "negative"
+            # Map 'error' or unknown sentiments to neutral to avoid crash
+            if pred_emotion not in confusion:
+                pred_emotion = 'neutral'
             
         except Exception as e:
             print(f"Error processing {filename}: {e}", flush=True)
@@ -168,4 +174,4 @@ async def run_benchmark():
     print("Benchmark complete. Results saved to benchmark_results_direct.txt")
 
 if __name__ == "__main__":
-    asyncio.run(run_benchmark())
+    run_benchmark_sync()

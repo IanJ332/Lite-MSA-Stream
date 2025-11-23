@@ -1,8 +1,11 @@
-# Legacy / Fallback (Phase 1/2 - Keep until full migration)
-openai-whisper
-transformers
-optimum
-accelerate
-huggingface_hub
+fastapi
+uvicorn
+websockets
+numpy<2.0
+scipy
+soundfile
+funasr
+modelscope
 onnxruntime
-kagglehub
+torch
+torchaudio

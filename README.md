@@ -20,12 +20,11 @@ Lite-MSA-Stream/
 ├── app/
 │   ├── main.py           # FastAPI entry point & WebSocket route
 │   ├── services/
-│   │   ├── sensevoice_service.py # Unified SenseVoice logic (New)
-│   │   ├── vad_iterator.py       # VAD logic
-│   │   └── audio_buffer.py       # Circular buffer
+│   │   ├── sensevoice_service.py # Unified SenseVoice logic
+│   │   └── vad_iterator.py       # VAD logic
 │   └── utils/
+├── frontend/             # Web Client
 ├── models/               # Cached models
-├── poc_sensevoice.py     # Proof of Concept script
 ├── Dockerfile            # Docker build
 ├── requirements.txt      # Python dependencies
 └── README.md
@@ -35,7 +34,7 @@ Lite-MSA-Stream/
 
 ### Prerequisites
 *   **Python 3.10+**
-*   **FFmpeg** (Required for audio processing)
+*   **FFmpeg** (Required for audio processing backend)
 *   **Docker** (Optional)
 
 ### Local Setup
@@ -67,7 +66,7 @@ Lite-MSA-Stream/
     ```bash
     uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ```
-    *On first run, it will automatically download the necessary ONNX models (~40MB) to the `models/` directory.*
+    *On first run, it will automatically download the necessary models to the `models/` directory.*
     *Access the API at `http://localhost:8000`*
 
 ### Usage
@@ -75,7 +74,7 @@ Lite-MSA-Stream/
 **WebSocket Endpoint**: `ws://localhost:8000/ws/analyze`
 
 **Input Format**:
-*   **Audio**: 16-bit PCM, Mono, 16kHz.
+*   **Audio**: Float32 PCM, Mono, 16kHz.
 *   **Chunk Size**: 512 samples (32ms) recommended.
 
 **Output Format** (JSON):
