@@ -9,3 +9,5 @@ modelscope
 onnxruntime
 torch
 torchaudio
+transformers
+h5py

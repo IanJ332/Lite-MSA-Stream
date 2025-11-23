@@ -84,11 +84,12 @@ class SenseVoiceService:
             raise e
 
 
-    def predict(self, audio_input) -> dict:
+    def predict(self, audio_input, beam_size: int = 1) -> dict:
         """
         Runs inference on the provided audio input.
         Args:
             audio_input: bytes (PCM 16-bit) or np.ndarray (float32)
+            beam_size: int, default 1. Higher = more accurate but slower.
         Returns a dictionary with text, sentiment, and confidence.
         """
         if not self.model:
@@ -96,7 +97,7 @@ class SenseVoiceService:
             return {"text": "", "sentiment": "neutral", "confidence": 0.0}
 
         input_len = len(audio_input) if isinstance(audio_input, (bytes, str)) else audio_input.shape[0]
-        logger.info(f"SenseVoice Predict called with input length {input_len}")
+        # logger.info(f"SenseVoice Predict called with input length {input_len}")
 
         try:
             import numpy as np
@@ -116,14 +117,13 @@ class SenseVoiceService:
 
             # Run Inference directly on numpy array
             # language="auto", use_itn=True for inverse text normalization (numbers, etc.)
-            # DEBUG: Check audio stats
-            print(f"DEBUG: audio_np stats: min={audio_np.min()}, max={audio_np.max()}, mean={audio_np.mean()}, shape={audio_np.shape}", flush=True)
             
             res = self.model.generate(
                 input=audio_np,
                 cache={},
                 language="auto",
                 use_itn=True,
+                beam_size=beam_size
             )
             
             print(f"DEBUG: Raw model result: {res}", flush=True)

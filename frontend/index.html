@@ -16,6 +16,13 @@
         </header>
 
         <main>
+            <div class="settings">
+                <label for="sensitivity-slider">Model Accuracy (CPU Usage): <span
+                        id="sensitivity-val">70%</span></label>
+                <input type="range" id="sensitivity-slider" min="0" max="100" value="70">
+                <p class="hint">Higher = More accurate (High CPU). Lower = Faster (Low CPU).</p>
+            </div>
+
             <div class="indicator-container">
                 <div id="sentiment-indicator" class="indicator neutral">
                     <span id="sentiment-text">Ready</span>

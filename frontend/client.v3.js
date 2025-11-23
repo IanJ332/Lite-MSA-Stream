@@ -15,8 +15,27 @@ let websocket;
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const WS_URL = `${protocol}//${window.location.host}/ws/analyze`;
 
+const sensitivitySlider = document.getElementById('sensitivity-slider');
+const sensitivityVal = document.getElementById('sensitivity-val');
+
 startBtn.addEventListener('click', startRecording);
 stopBtn.addEventListener('click', stopRecording);
+
+sensitivitySlider.addEventListener('input', () => {
+    const val = sensitivitySlider.value;
+    sensitivityVal.innerText = `${val}%`;
+
+    // Calculate Threshold: Higher Sensitivity = Lower Threshold
+    // 100% -> 0.0 (Most Sensitive), 0% -> 1.0 (Least Sensitive)
+    const threshold = 1.0 - (val / 100);
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            type: "config",
+            vad_threshold: threshold
+        }));
+    }
+});
 
 async function startRecording() {
     try {

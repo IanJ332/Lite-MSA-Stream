@@ -33,7 +33,7 @@ logs/
 
 # Data and Models
 ravdess_data/
-models/
+
 *.onnx
 *.pth
 *.bin
