@@ -160,9 +160,21 @@ function handleResult(data) {
 
 function getColorForSentiment(sentiment) {
     switch (sentiment) {
-        case 'positive': return 'var(--positive-color)';
-        case 'negative': return 'var(--negative-color)';
-        default: return 'var(--neutral-color)';
+        case 'happy':
+        case 'surprised':
+        case 'positive':
+            return 'var(--positive-color)';
+
+        case 'sad':
+        case 'angry':
+        case 'fearful':
+        case 'disgusted':
+        case 'negative':
+            return 'var(--negative-color)';
+
+        case 'neutral':
+        default:
+            return 'var(--neutral-color)';
     }
 }
 

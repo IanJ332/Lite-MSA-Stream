@@ -160,17 +160,17 @@ class SenseVoiceService:
         Example raw: "<|en|><|HAPPY|>Hello world"
         """
         # 1. Define Emotion Tags Mapping
-        # SenseVoice typically uses: <|HAPPY|>, <|SAD|>, <|ANGRY|>, <|NEUTRAL|>, <|FEARFUL|>, <|DISGUSTED|>, <|SURPRISED|>
-        # We map them to our 3-class system: positive, negative, neutral
+        # SenseVoice uses: <|HAPPY|>, <|SAD|>, <|ANGRY|>, <|NEUTRAL|>, <|FEARFUL|>, <|DISGUSTED|>, <|SURPRISED|>
+        # We map them to specific emotions as requested by the user.
         
         tag_map = {
-            "<|HAPPY|>": "positive",
-            "<|SAD|>": "negative",
-            "<|ANGRY|>": "negative",
+            "<|HAPPY|>": "happy",
+            "<|SAD|>": "sad",
+            "<|ANGRY|>": "angry",
             "<|NEUTRAL|>": "neutral",
-            "<|FEARFUL|>": "negative",
-            "<|DISGUSTED|>": "negative",
-            "<|SURPRISED|>": "positive", # Context dependent, but often positive in casual speech
+            "<|FEARFUL|>": "fearful",
+            "<|DISGUSTED|>": "disgusted",
+            "<|SURPRISED|>": "surprised",
         }
         
         detected_sentiment = "neutral"
@@ -179,7 +179,7 @@ class SenseVoiceService:
         for tag, sentiment in tag_map.items():
             if tag in raw_text:
                 detected_sentiment = sentiment
-                break # Prioritize the first tag found? Or specific hierarchy?
+                break 
         
         # Clean Text
         # Remove all tags like <|en|>, <|HAPPY|>, etc.
