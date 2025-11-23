@@ -1,0 +1,4 @@
+Beam 1 Time: 0.7927s
+Beam 1 Result: [{'key': 'rand_key_2yW4Acq9GFz6Y', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]
+Beam 10 Time: 0.5853s
+Beam 10 Result: [{'key': 'rand_key_1t9EwL56nGisi', 'text': '<|en|><|ANGRY|><|Speech|><|withitn|>Kids are talking by the door.'}]

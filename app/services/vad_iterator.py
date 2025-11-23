@@ -42,6 +42,15 @@ class VADIterator:
         self.current_speech = bytearray()
         self.temp_end = 0
 
+    def set_threshold(self, threshold: float):
+        """
+        Dynamically update the VAD threshold.
+        Args:
+            threshold (float): New threshold (0.0 to 1.0). Lower = More Sensitive (High CPU).
+        """
+        self.threshold = max(0.01, min(0.99, threshold))
+        logger.info(f"VAD Threshold updated to {self.threshold}")
+
     def process(self, audio_chunk: bytes):
         """
         Process an audio chunk and return a speech segment if a sentence is completed.
