@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class FusionNet(nn.Module):
-    def __init__(self, input_dim=2048, hidden_dim=512, output_dim=8, dropout=0.3):
+    def __init__(self, input_dim=2048, hidden_dim=1024, output_dim=8, dropout=0.3):
         """
         Linear Fusion Layer for Ensemble SER.
         Args:

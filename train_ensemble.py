@@ -15,7 +15,7 @@ from app.models.fusion_layer import FusionNet
 def train_ensemble():
     # Config
     BATCH_SIZE = 32
-    EPOCHS = 50
+    EPOCHS = 200
     LR = 0.001
     DEVICE = "cpu" # Training is light, CPU is fine
     
@@ -42,9 +42,13 @@ def train_ensemble():
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     
     # Model
-    model = FusionNet().to(DEVICE)
+    model = FusionNet(hidden_dim=1024).to(DEVICE)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LR)
+    # Add weight_decay for regularization
+    optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=1e-4)
+    
+    # Scheduler: Reduce LR if Test Acc doesn't improve for 10 epochs
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=10, verbose=True)
     
     best_acc = 0.0
     
@@ -85,7 +89,11 @@ def train_ensemble():
         
         test_acc = 100 * correct / total
         
-        print(f"Epoch {epoch+1}/{EPOCHS} - Loss: {running_loss/len(train_loader):.4f} - Train Acc: {train_acc:.2f}% - Test Acc: {test_acc:.2f}%")
+        # Step Scheduler
+        scheduler.step(test_acc)
+        current_lr = optimizer.param_groups[0]['lr']
+        
+        print(f"Epoch {epoch+1}/{EPOCHS} - Loss: {running_loss/len(train_loader):.4f} - Train Acc: {train_acc:.2f}% - Test Acc: {test_acc:.2f}% - LR: {current_lr:.6f}")
         
         if test_acc > best_acc:
             best_acc = test_acc
