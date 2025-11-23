@@ -49,7 +49,7 @@ def prepare_data():
     
     count = 0
     for file_path in tqdm(wav_files):
-        if count >= LIMIT:
+        if LIMIT is not None and count >= LIMIT:
             break
         count += 1
         try:
