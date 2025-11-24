@@ -48,7 +48,7 @@ ravdess_data/
 Thumbs.db
 
 # Docker
-.dockerignore
+
 
 # Testing
 benchmark_results.txt

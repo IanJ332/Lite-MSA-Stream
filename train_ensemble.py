@@ -48,7 +48,7 @@ def train_ensemble():
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=1e-4)
     
     # Scheduler: Reduce LR if Test Acc doesn't improve for 10 epochs
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=10, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=10)
     
     best_acc = 0.0
     

@@ -47,6 +47,33 @@ def prepare_data():
     LIMIT = None
     print(f"Extracting features (Full Dataset)...")
     
+    import librosa
+    
+    def augment_audio(y, sr):
+        """Generate augmented versions of audio."""
+        augmented = []
+        
+        # 1. Add Noise (SNR ~30dB)
+        noise = np.random.randn(len(y))
+        y_noise = y + 0.005 * noise
+        augmented.append(y_noise)
+        
+        # 2. Pitch Shift (Lower)
+        try:
+            y_pitch_down = librosa.effects.pitch_shift(y, sr=sr, n_steps=-2)
+            augmented.append(y_pitch_down)
+        except:
+            pass
+            
+        # 3. Pitch Shift (Higher)
+        try:
+            y_pitch_up = librosa.effects.pitch_shift(y, sr=sr, n_steps=2)
+            augmented.append(y_pitch_up)
+        except:
+            pass
+            
+        return augmented
+
     count = 0
     for file_path in tqdm(wav_files):
         if LIMIT is not None and count >= LIMIT:
@@ -65,22 +92,25 @@ def prepare_data():
                 
             label = EMOTION_MAP[emotion_code]
             
-            # Load Audio
-            audio, sr = sf.read(file_path)
-            if len(audio.shape) > 1:
-                audio = np.mean(audio, axis=1)
+            # Load Audio (Using librosa for consistency with augmentation)
+            # Librosa loads as float32, normalized, mono by default
+            y, sr = librosa.load(file_path, sr=16000)
             
-            # Resample
-            if sr != 16000:
-                from scipy import signal
-                num_samples = int(len(audio) * 16000 / sr)
-                audio = signal.resample(audio, num_samples)
-            
-            # Extract Features
-            feat = service.extract_features(audio) # (1, 2048)
-            
+            # Process Original
+            feat = service.extract_features(y)
             features_list.append(feat.squeeze())
             labels_list.append(label)
+            
+            # Process Augmented
+            augmented_versions = augment_audio(y, sr)
+            for y_aug in augmented_versions:
+                feat_aug = service.extract_features(y_aug)
+                features_list.append(feat_aug.squeeze())
+                labels_list.append(label)
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}")
+            continue
             
         except Exception as e:
             print(f"Error processing {file_path}: {e}")

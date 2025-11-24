@@ -1,0 +1,18 @@
+﻿__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.DS_Store
+.git/
+.gitignore
+.vscode/
+ravdess_data/
+# We exclude ravdess_data to keep the build context small. 
+# Users should mount it or copy it separately if they want to train inside Docker.
+# However, for running the app, we only need the trained weights.
+features.h5
+# Exclude large feature file if it exists locally

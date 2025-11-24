@@ -97,3 +97,29 @@ Once `fusion_weights.pth` exists, the application automatically loads it to prov
 *   **`ModuleNotFoundError`**: Run `pip install -r requirements.txt` again.
 *   **`fusion_weights.pth not found`**: The app will still run, but it will fall back to the basic SenseVoice model (lower accuracy, fewer emotions). Run Step 4 (Training) to fix this.
 *   **High CPU Usage**: This is normal! The Ensemble model runs 3 deep neural networks in parallel to achieve high accuracy. Use the slider in the UI to lower CPU usage if needed.
+
+---
+
+## 🐳 Docker Support (Intel Mac / Linux / Windows)
+
+If you are using an **Intel MacBook** (where PyTorch versions might be tricky) or just want a consistent environment, use Docker.
+
+### 1. Build the Image
+```bash
+docker build -t vox-pathos .
+```
+
+### 2. Run the Container
+```bash
+docker run -p 8000:8000 vox-pathos
+```
+*   Access the UI at `http://localhost:8000`.
+
+### 3. Training in Docker (Optional)
+If you need to run the training inside Docker (e.g., to generate `fusion_weights.pth`), mount your data volume:
+```bash
+# Mount current directory to /app so the script can see 'ravdess_data' and save 'fusion_weights.pth' back to your host
+docker run -v $(pwd):/app vox-pathos python scripts/prepare_data.py
+docker run -v $(pwd):/app vox-pathos python train_ensemble.py
+```
+*(On Windows PowerShell, replace `$(pwd)` with `${PWD}`)*
