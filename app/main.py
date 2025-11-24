@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 # Services
 from app.services.vad_iterator import VADIterator
 from app.services.sensevoice_service import SenseVoiceService
+from app.services.text_service import TextService
 
 # Configure Logging
 if not os.path.exists("logs"):
@@ -43,10 +44,11 @@ app.add_middleware(
 # Global Service Instances
 sensevoice_service = None
 ensemble_service = None
+text_service = None
 
 @app.on_event("startup")
 async def startup_event():
-    global sensevoice_service, ensemble_service
+    global sensevoice_service, ensemble_service, text_service
     
     logger.info("--- Starting Vox-Pathos Services ---")
     
@@ -58,6 +60,10 @@ async def startup_event():
     logger.info("Initializing Ensemble SER Service (Emotion)...")
     from app.services.ensemble_service import EnsembleService
     ensemble_service = EnsembleService(device="cpu")
+
+    # Initialize Text Emotion Service
+    logger.info("Initializing Text Emotion Service (DistilRoberta)...")
+    text_service = TextService()
     
     # Load Fusion Weights if available
     if os.path.exists("fusion_weights.pth"):
@@ -90,7 +96,7 @@ async def websocket_endpoint(websocket: WebSocket):
     STEP_SIZE = 32000
     audio_buffer = bytearray()
     
-    from textblob import TextBlob
+    # from textblob import TextBlob (Removed)
     
     try:
         while True:
@@ -115,6 +121,18 @@ async def websocket_endpoint(websocket: WebSocket):
             if "bytes" in message:
                 chunk = message["bytes"]
                 audio_buffer.extend(chunk)
+                
+                # 1. VAD (Process Incoming Chunk Only)
+                # We process the raw stream to update VAD state correctly
+                # Chunk is likely small (e.g. 4096 bytes = 1024 samples)
+                speech_segment, speech_prob = vad_iterator.process(chunk)
+                
+                # Send VAD Update
+                await websocket.send_json({
+                    "type": "vad_update",
+                    "prob": speech_prob,
+                    "triggered": vad_iterator.triggered
+                })
             else:
                 continue
             
@@ -124,30 +142,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 window_bytes = audio_buffer[:WINDOW_SIZE]
                 
                 # Slide Buffer (Remove Step Size)
-                # Keep the overlap for the next window
                 audio_buffer = audio_buffer[STEP_SIZE:]
                 
-                # 1. VAD (Check if this window has speech)
-                # We still use VAD to avoid processing silence
-                speech_segment, speech_prob = vad_iterator.process(window_bytes)
-                
-                # Send VAD Update
-                await websocket.send_json({
-                    "type": "vad_update",
-                    "prob": speech_prob,
-                    "triggered": vad_iterator.triggered
-                })
-                
-                # Only process if VAD triggered OR speech probability is high
+                # Only process if VAD triggered OR speech probability is high (on the latest chunk)
                 if vad_iterator.triggered or speech_prob > 0.5:
                     logger.info(f"Processing Streaming Window: {len(window_bytes)} bytes")
                     
                     # 2. Parallel Inference
+                    # Convert bytearray to bytes for SenseVoice
+                    window_bytes_frozen = bytes(window_bytes)
+                    
                     asr_future = loop.run_in_executor(
-                        None, lambda: sensevoice_service.predict(window_bytes, beam_size=beam_size)
+                        None, lambda: sensevoice_service.predict(window_bytes_frozen, beam_size=beam_size)
                     )
                     emotion_future = loop.run_in_executor(
-                        None, lambda: ensemble_service.predict_emotions(window_bytes)
+                        None, lambda: ensemble_service.predict_emotions(window_bytes_frozen)
                     )
                     
                     asr_result, emotion_probs = await asyncio.gather(asr_future, emotion_future)
@@ -156,64 +165,42 @@ async def websocket_endpoint(websocket: WebSocket):
                     final_confidence = asr_result["confidence"]
                     text_content = asr_result["text"]
                     
-                        # 3. Text Fusion (Correct Acoustic Bias)
+                    # Filter Garbage / Short Hallucinations
+                    # Ignore if empty, too short (< 2 chars), or just punctuation
+                    # Also ignore common short hallucinations like "The.", "You.", "I."
+                    hallucinations = ["The.", "You.", "I.", "It.", "A.", "And.", "But.", "So.", "He.", "She.", "They.", "We."]
+                    if not text_content or len(text_content.strip()) < 2 or text_content.strip() in [".", ",", "?", "!", "。", "，", "？", "！"] or text_content.strip() in hallucinations:
+                        logger.info(f"Ignored Garbage Output: '{text_content}'")
+                        continue
+                    text_emotions = {}
                     if text_content:
-                        # A. Semantic Keyword Layer (Bag of Words)
-                        # Explicitly catch strong emotional words
-                        text_lower = text_content.lower()
+                        # Analyze Text Sentiment (DistilRoberta)
+                        text_emotions = text_service.analyze_sentiment(text_content)
+                        logger.info(f"Text Emotions: {text_emotions}")
                         
-                        # Define Keywords
-                        keywords = {
-                            "angry": ["fuck", "shit", "damn", "hell", "stupid", "hate", "kill", "angry", "mad"],
-                            "happy": ["happy", "great", "awesome", "love", "amazing", "good", "excited", "wow"],
-                            "sad": ["sad", "cry", "sorry", "depressed", "unhappy", "bad", "grief"],
-                            "fearful": ["scared", "fear", "afraid", "help", "danger"],
-                            "disgusted": ["gross", "yuck", "disgusting", "nasty", "eww"]
-                        }
-                        
-                        # Check for matches
-                        keyword_boost = {}
-                        for emotion, words in keywords.items():
-                            for word in words:
-                                if word in text_lower:
-                                    keyword_boost[emotion] = keyword_boost.get(emotion, 0) + 1.0
-                        
-                        # B. TextBlob Polarity (General Sentiment)
-                        blob = TextBlob(text_content)
-                        polarity = blob.sentiment.polarity # -1.0 to 1.0
-                        
-                        if emotion_probs:
-                            # Apply Keyword Boost (Strongest Signal)
-                            for emotion, boost in keyword_boost.items():
-                                # Massive boost for explicit keywords (e.g. "fuck" -> Angry)
-                                emotion_probs[emotion] = emotion_probs.get(emotion, 0) * (2.0 + boost)
-                                logger.info(f"Keyword Boost: {emotion} x{2.0+boost}")
+                        if emotion_probs and text_emotions:
+                            # Fusion Strategy: Semantic Bias
+                            for emotion, text_prob in text_emotions.items():
+                                if emotion in emotion_probs:
+                                    emotion_probs[emotion] = emotion_probs.get(emotion, 0) * (1.0 + text_prob * 2.0)
+                            
+                            # Acoustic Calibration
+                            if text_emotions.get('neutral', 0) > 0.5:
+                                emotion_probs['neutral'] = emotion_probs.get('neutral', 0) * 2.0
+                                emotion_probs['calm'] = emotion_probs.get('calm', 0) * 1.5
 
-                            # Apply General Polarity Bias
-                            if polarity > 0.2: # Positive
-                                emotion_probs['happy'] = emotion_probs.get('happy', 0) * (1.0 + polarity)
-                                emotion_probs['surprised'] = emotion_probs.get('surprised', 0) * (1.0 + polarity)
-                            elif polarity < -0.2: # Negative
-                                emotion_probs['sad'] = emotion_probs.get('sad', 0) * (1.0 + abs(polarity))
-                                emotion_probs['angry'] = emotion_probs.get('angry', 0) * (1.0 + abs(polarity))
-                            
-                            # Apply Acoustic Calibration (Neutral/Calm Boost)
-                            # Only apply if NO strong keywords found
-                            if not keyword_boost:
-                                emotion_probs['neutral'] = emotion_probs.get('neutral', 0) * 3.0
-                                emotion_probs['calm'] = emotion_probs.get('calm', 0) * 2.0
-                            
                             # Normalize
                             total = sum(emotion_probs.values())
-                            for k in emotion_probs:
-                                emotion_probs[k] /= total
+                            if total > 0:
+                                for k in emotion_probs:
+                                    emotion_probs[k] /= total
                                 
                             # Find Top Emotion
                             top_emotion = max(emotion_probs, key=emotion_probs.get)
                             final_sentiment = top_emotion
                             final_confidence = emotion_probs[top_emotion]
                             
-                            logger.info(f"Fused Emotion: {top_emotion} (Text Polarity: {polarity:.2f})")
+                            logger.info(f"Fused Emotion: {top_emotion} (Text Bias Applied)")
 
                     # 4. Response
                     response = {
@@ -227,7 +214,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "processing_time": asr_result.get("processing_time", 0),
                             "raw_output": asr_result.get("raw_output", ""),
                             "beam_size": beam_size,
-                            "text_polarity": polarity if text_content else 0.0
+                            "text_emotions": text_emotions
                         }
                     }
                     data_logger.info(json.dumps(response))

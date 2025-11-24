@@ -1,72 +1,130 @@
 import sys
 import os
-
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-
 import h5py
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-from torch.utils.data import TensorDataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from app.models.fusion_layer import FusionNet
 
-def train_ensemble():
-    # Config
-    BATCH_SIZE = 32
-    EPOCHS = 200
-    LR = 0.001
-    # Check for CUDA
-    if torch.cuda.is_available():
-        DEVICE = "cuda"
-        print("CUDA is available. Training on GPU.")
-    else:
-        DEVICE = "cpu"
-        print("CUDA not available. Training on CPU.")
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+class AudioDataset(Dataset):
+    def __init__(self, features, labels):
+        self.features = torch.tensor(features, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        return self.features[idx], self.labels[idx]
+
+def get_speaker_split(speakers):
+    """
+    Returns train_indices and val_indices based on Speaker ID.
+    Validation:
+    - CREMA-D: 1082 - 1091 (Last 10)
+    - RAVDESS: 21 - 24 (Last 4)
+    - TESS: None (All Train)
+    """
+    train_indices = []
+    val_indices = []
     
-    print("Loading data from features.h5...")
-    try:
-        with h5py.File("features.h5", "r") as f:
-            features = torch.tensor(f["features"][:]).float()
-            labels = torch.tensor(f["labels"][:]).long()
-    except Exception as e:
-        print(f"Failed to load data: {e}")
+    for idx, spk in enumerate(speakers):
+        # spk is bytes in H5, decode if needed
+        if isinstance(spk, bytes):
+            spk = spk.decode('utf-8')
+            
+        is_val = False
+        
+        if "CREMA_" in spk:
+            # CREMA_1001
+            spk_num = int(spk.split("_")[1])
+            if spk_num >= 1082:
+                is_val = True
+        elif "RAVDESS_" in spk:
+            # RAVDESS_01
+            spk_num = int(spk.split("_")[1])
+            if spk_num >= 21:
+                is_val = True
+        
+        if is_val:
+            val_indices.append(idx)
+        else:
+            train_indices.append(idx)
+            
+    return train_indices, val_indices
+
+def train_ensemble():
+    # 1. Load Data
+    data_file = "all_features.h5"
+    if not os.path.exists(data_file):
+        print(f"Error: {data_file} not found. Run prepare_data.py first.")
         return
 
-    print(f"Data shape: {features.shape}, Labels shape: {labels.shape}")
+    print(f"Loading data from {data_file}...")
+    with h5py.File(data_file, "r") as f:
+        features = f["features"][:]
+        labels = f["labels"][:]
+        speakers = f["speakers"][:]
+
+    print(f"Total Samples: {len(features)}")
     
-    # Dataset
-    dataset = TensorDataset(features, labels)
+    # 2. Speaker-Independent Split
+    print("Performing Speaker-Independent Split...")
+    train_idx, val_idx = get_speaker_split(speakers)
+    print(f"Train: {len(train_idx)}, Val: {len(val_idx)}")
     
-    # Split
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+    X_train = features[train_idx]
+    y_train = labels[train_idx]
+    X_val = features[val_idx]
+    y_val = labels[val_idx]
     
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    # 3. Class Balancing (WeightedRandomSampler)
+    print("Calculating Class Weights...")
+    class_counts = np.bincount(y_train)
+    class_weights = 1. / class_counts
+    sample_weights = class_weights[y_train]
     
-    # Model
-    model = FusionNet(hidden_dim=1024).to(DEVICE)
+    sampler = WeightedRandomSampler(
+        weights=torch.DoubleTensor(sample_weights),
+        num_samples=len(sample_weights),
+        replacement=True
+    )
+    
+    # 4. DataLoaders
+    train_dataset = AudioDataset(X_train, y_train)
+    val_dataset = AudioDataset(X_val, y_val)
+    
+    train_loader = DataLoader(train_dataset, batch_size=32, sampler=sampler) # Use Sampler!
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    
+    # 5. Model Setup
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Training on {device}")
+    
+    # Update Output Dim to 6 (Neu, Hap, Sad, Ang, Fea, Dis)
+    model = FusionNet(input_dim=2048, hidden_dim=1024, output_dim=6, dropout_rate=0.4).to(device)
+    
     criterion = nn.CrossEntropyLoss()
-    # Add weight_decay for regularization
-    optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4) # Lower LR for fine-tuning
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5)
+
+    # 6. Training Loop
+    best_val_acc = 0.0
+    EPOCHS = 50 # Enough for convergence with pre-extracted features
     
-    # Scheduler: Reduce LR if Test Acc doesn't improve for 10 epochs
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=10)
-    
-    best_acc = 0.0
-    
-    print("Starting training...")
     for epoch in range(EPOCHS):
         model.train()
-        running_loss = 0.0
+        train_loss = 0.0
         correct = 0
         total = 0
         
         for inputs, targets in train_loader:
-            inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
+            inputs, targets = inputs.to(device), targets.to(device)
             
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -74,7 +132,7 @@ def train_ensemble():
             loss.backward()
             optimizer.step()
             
-            running_loss += loss.item()
+            train_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
@@ -83,30 +141,28 @@ def train_ensemble():
         
         # Validation
         model.eval()
-        correct = 0
-        total = 0
+        val_correct = 0
+        val_total = 0
         with torch.no_grad():
-            for inputs, targets in test_loader:
-                inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
+            for inputs, targets in val_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
                 _, predicted = torch.max(outputs.data, 1)
-                total += targets.size(0)
-                correct += (predicted == targets).sum().item()
+                val_total += targets.size(0)
+                val_correct += (predicted == targets).sum().item()
         
-        test_acc = 100 * correct / total
+        val_acc = 100 * val_correct / val_total
         
-        # Step Scheduler
-        scheduler.step(test_acc)
-        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Epoch {epoch+1}/{EPOCHS} | Loss: {train_loss/len(train_loader):.4f} | Train Acc: {train_acc:.2f}% | Val Acc: {val_acc:.2f}%")
         
-        print(f"Epoch {epoch+1}/{EPOCHS} - Loss: {running_loss/len(train_loader):.4f} - Train Acc: {train_acc:.2f}% - Test Acc: {test_acc:.2f}% - LR: {current_lr:.6f}")
+        scheduler.step(val_acc)
         
-        if test_acc > best_acc:
-            best_acc = test_acc
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
             torch.save(model.state_dict(), "fusion_weights.pth")
-            
-    print(f"Training complete. Best Test Accuracy: {best_acc:.2f}%")
-    print("Model saved to fusion_weights.pth")
+            print("--> Best Model Saved")
+
+    print(f"Training Complete. Best Val Acc: {best_val_acc:.2f}%")
 
 if __name__ == "__main__":
     train_ensemble()

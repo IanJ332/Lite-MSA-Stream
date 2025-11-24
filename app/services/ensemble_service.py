@@ -100,7 +100,8 @@ class EnsembleService:
             probs = torch.nn.functional.softmax(logits, dim=1)[0].cpu().numpy()
             
         # Map to labels
-        EMOTION_LABELS = ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
+        # Map to labels (Unified 6-Emotion Map)
+        EMOTION_LABELS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted']
         
         result = {}
         for i, label in enumerate(EMOTION_LABELS):

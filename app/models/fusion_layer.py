@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class FusionNet(nn.Module):
-    def __init__(self, input_dim=2048, hidden_dim=1024, output_dim=8, dropout=0.3):
+    def __init__(self, input_dim=2048, hidden_dim=1024, output_dim=6, dropout_rate=0.4):
         """
         Deep Fusion Layer for Ensemble SER.
         Args:
@@ -17,13 +17,13 @@ class FusionNet(nn.Module):
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.bn1 = nn.BatchNorm1d(hidden_dim)
         self.relu1 = nn.ReLU()
-        self.dropout1 = nn.Dropout(dropout)
+        self.dropout1 = nn.Dropout(dropout_rate)
         
         # Layer 2 (Extra Layer)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim // 2)
         self.bn2 = nn.BatchNorm1d(hidden_dim // 2)
         self.relu2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout_rate)
         
         # Layer 3 (Output)
         self.fc3 = nn.Linear(hidden_dim // 2, output_dim)

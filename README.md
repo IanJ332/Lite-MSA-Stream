@@ -1,14 +1,3 @@
-# Vox-Pathos: Real-time Multimodal Sentiment Analysis (Ensemble Architecture)
-
-This project implements a high-accuracy, real-time Speech Emotion Recognition (SER) system using an **Ensemble Architecture**. It combines **SenseVoiceSmall** (for ASR and base emotion) with **HuBERT** and **Wav2Vec2** (for robust acoustic features), fused by a custom Neural Network.
-
-## 🚀 Deployment Guide
-
-Follow these instructions to set up, train, and run the system on a new machine.
-
-### 1. Prerequisites
-*   **OS**: Windows, Linux, or macOS.
-*   **Python**: 3.10 or higher (Tested on 3.13).
 *   **RAM**: 8GB minimum (16GB recommended for training).
 *   **CPU**: Modern Multi-core CPU (AVX2 support recommended).
 

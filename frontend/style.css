@@ -148,3 +148,41 @@ header p {
 .log-entry .text {
     color: #fff;
 }
+
+/* Log Entry Colors */
+.log-entry.happy .meta,
+.log-entry.surprised .meta {
+    color: var(--positive-color);
+}
+
+.log-entry.sad .meta,
+.log-entry.angry .meta,
+.log-entry.fearful .meta,
+.log-entry.disgusted .meta {
+    color: var(--negative-color);
+}
+
+.log-entry.neutral .meta,
+.log-entry.calm .meta {
+    color: var(--neutral-color);
+}
+
+.log-entry.happy,
+.log-entry.surprised {
+    border-left: 3px solid var(--positive-color);
+    padding-left: 8px;
+}
+
+.log-entry.sad,
+.log-entry.angry,
+.log-entry.fearful,
+.log-entry.disgusted {
+    border-left: 3px solid var(--negative-color);
+    padding-left: 8px;
+}
+
+.log-entry.neutral,
+.log-entry.calm {
+    border-left: 3px solid var(--neutral-color);
+    padding-left: 8px;
+}

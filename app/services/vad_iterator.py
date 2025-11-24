@@ -6,7 +6,7 @@ from app.utils.model_utils import download_model
 logger = logging.getLogger(__name__)
 
 class VADIterator:
-    def __init__(self, threshold: float = 0.3, sampling_rate: int = 16000, min_silence_duration_ms: int = 2000, min_speech_duration_ms: int = 250):
+    def __init__(self, threshold: float = 0.5, sampling_rate: int = 16000, min_silence_duration_ms: int = 2000, min_speech_duration_ms: int = 500):
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.min_silence_samples = min_silence_duration_ms * sampling_rate / 1000

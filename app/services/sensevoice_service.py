@@ -121,7 +121,7 @@ class SenseVoiceService:
             res = self.model.generate(
                 input=audio_np,
                 cache={},
-                language="auto",
+                language="en",
                 use_itn=True,
                 beam_size=beam_size
             )

@@ -138,6 +138,17 @@ function updateUIState(isRecording) {
     }
 }
 
+const emotionEmojis = {
+    'happy': '😊',
+    'sad': '😢',
+    'angry': '😡',
+    'fearful': '😨',
+    'disgusted': '🤢',
+    'neutral': '😐',
+    'surprised': '😲',
+    'calm': '😌'
+};
+
 function handleResult(data) {
     if (data.type === 'vad_update') {
         const prob = data.prob;
@@ -162,7 +173,8 @@ function handleResult(data) {
 
         // Update Indicator
         indicator.className = `indicator ${sentiment}`;
-        sentimentText.innerText = sentiment;
+        const emoji = emotionEmojis[sentiment] || '😐';
+        sentimentText.innerText = `${emoji} ${sentiment.toUpperCase()}`;
 
         // Update Bar
         const pct = Math.round(confidence * 100);
@@ -170,9 +182,9 @@ function handleResult(data) {
         confidenceFill.style.backgroundColor = getColorForSentiment(sentiment);
         confidenceText.innerText = `Confidence: ${pct}%`;
 
-        // Log Transcript
+        // Log Transcript (Streaming Append)
         if (transcript) {
-            log(`[${sentiment.toUpperCase()}] ${transcript}`);
+            appendLog(transcript, sentiment, emoji);
         }
     }
 }
@@ -197,9 +209,34 @@ function getColorForSentiment(sentiment) {
     }
 }
 
+let lastLogDiv = null;
+let lastSentiment = null;
+
+function appendLog(msg, sentiment, emoji) {
+    // If sentiment is same as last one, append to same bubble
+    if (lastLogDiv && lastSentiment === sentiment) {
+        const textSpan = lastLogDiv.querySelector('.text');
+        textSpan.innerText += " " + msg;
+        // Scroll to bottom of this div if needed, or just let it grow
+    } else {
+        // Create new bubble
+        const div = document.createElement('div');
+        div.className = `log-entry ${sentiment}`;
+        div.innerHTML = `
+            <div class="meta">${emoji} ${sentiment.toUpperCase()}</div>
+            <div class="text">${msg}</div>
+        `;
+        logOutput.prepend(div); // Or append if we want chat style, but prepend matches current "latest top"
+        lastLogDiv = div;
+        lastSentiment = sentiment;
+    }
+}
+
 function log(msg) {
+    // System messages
     const div = document.createElement('div');
-    div.className = 'log-entry';
-    div.innerHTML = `<div class="meta">${new Date().toLocaleTimeString()}</div><div class="text">${msg}</div>`;
+    div.className = 'log-entry system';
+    div.innerHTML = `<div class="meta">SYSTEM</div><div class="text">${msg}</div>`;
     logOutput.prepend(div);
+    lastLogDiv = null; // Break the chain
 }
