@@ -38,6 +38,7 @@ ravdess_data/
 *.pth
 *.bin
 *.wav
+*.zip
 
 # IDE
 .vscode/

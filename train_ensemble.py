@@ -17,7 +17,13 @@ def train_ensemble():
     BATCH_SIZE = 32
     EPOCHS = 200
     LR = 0.001
-    DEVICE = "cpu" # Training is light, CPU is fine
+    # Check for CUDA
+    if torch.cuda.is_available():
+        DEVICE = "cuda"
+        print("CUDA is available. Training on GPU.")
+    else:
+        DEVICE = "cpu"
+        print("CUDA not available. Training on CPU.")
     
     print("Loading data from features.h5...")
     try:

@@ -123,3 +123,20 @@ docker run -v $(pwd):/app vox-pathos python scripts/prepare_data.py
 docker run -v $(pwd):/app vox-pathos python train_ensemble.py
 ```
 *(On Windows PowerShell, replace `$(pwd)` with `${PWD}`)*
+
+---
+
+## ☁️ Cloud Training (Google Colab)
+
+If your local machine is slow or you want to use a free GPU, use the provided Colab notebook.
+
+1.  **Zip your Data**: Zip the `ravdess_data` folder to `ravdess_data.zip`.
+2.  **Upload to Drive**: Upload `ravdess_data.zip` to your Google Drive.
+3.  **Open Notebook**: Upload `Lite_MSA_Colab_Training.ipynb` to [Google Colab](https://colab.research.google.com/).
+4.  **Run All Cells**: The notebook will:
+    *   Mount your Drive.
+    *   Clone the code.
+    *   Install dependencies.
+    *   Run Data Prep (Augmentation) & Training.
+    *   Save `fusion_weights.pth` back to your Drive.
+5.  **Download Weights**: Download `fusion_weights.pth` from Drive to your local project folder and run the app!
