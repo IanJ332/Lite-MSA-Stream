@@ -6,41 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vox-Pathos | Real-time Sentiment</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>Vox-Pathos</h1>
-            <p>Real-time Multimodal Sentiment Analysis</p>
-        </header>
-
-        <main>
-            <div class="settings">
-                <label for="sensitivity-slider">Model Accuracy (CPU Usage): <span
-                        id="sensitivity-val">70%</span></label>
-                <input type="range" id="sensitivity-slider" min="0" max="100" value="70">
-                <p class="hint">Higher = More accurate (High CPU). Lower = Faster (Low CPU).</p>
-            </div>
+    <div class="app-container">
+        <!-- Left Panel: Real-time Data -->
+        <aside class="data-panel">
+            <header>
+                <h1>Vox-Pathos</h1>
+                <p>Real-time Multimodal AI</p>
+            </header>
 
             <div class="indicator-container">
                 <div id="sentiment-indicator" class="indicator neutral">
-                    <span id="sentiment-text">Ready</span>
+                    <span id="sentiment-text">READY</span>
                 </div>
-                <div class="confidence-bar">
-                    <div id="confidence-fill" style="width: 0%"></div>
-                </div>
-                <p id="confidence-text">Confidence: 0%</p>
+            </div>
+
+            <div class="radar-container">
+                <canvas id="emotionRadar"></canvas>
+            </div>
+
+            <!-- Top 3 Emotions List -->
+            <div id="top-emotions" class="top-emotions">
+                <!-- JS will populate this -->
             </div>
 
             <div class="controls">
-                <button id="start-btn" class="btn start">Start Recording</button>
+                <button id="start-btn" class="btn start">Start</button>
                 <button id="stop-btn" class="btn stop" disabled>Stop</button>
             </div>
 
-            <div class="log-container">
-                <h3>Live Transcript & Analysis</h3>
-                <div id="log-output"></div>
+            <div class="settings">
+                <label>Sensitivity: <span id="sensitivity-val">70%</span></label>
+                <input type="range" id="sensitivity-slider" min="0" max="100" value="70">
+            </div>
+        </aside>
+
+        <!-- Right Panel: Chat Stream -->
+        <main class="chat-panel">
+            <div id="log-output" class="chat-stream">
+                <div class="log-entry system">
+                    <div class="text">System Ready. Click Start to begin.</div>
+                </div>
             </div>
         </main>
     </div>

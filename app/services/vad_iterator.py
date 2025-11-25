@@ -6,11 +6,12 @@ from app.utils.model_utils import download_model
 logger = logging.getLogger(__name__)
 
 class VADIterator:
-    def __init__(self, threshold: float = 0.5, sampling_rate: int = 16000, min_silence_duration_ms: int = 2000, min_speech_duration_ms: int = 500):
+    def __init__(self, threshold: float = 0.5, sampling_rate: int = 16000, min_silence_duration_ms: int = 500, min_speech_duration_ms: int = 250, max_speech_duration_s: float = 10.0):
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.min_silence_samples = min_silence_duration_ms * sampling_rate / 1000
         self.min_speech_samples = min_speech_duration_ms * sampling_rate / 1000
+        self.max_speech_samples = max_speech_duration_s * sampling_rate
         
         # State
         self.triggered = False
@@ -89,15 +90,25 @@ class VADIterator:
             
             # Debug logging for VAD probability (every ~1 second)
             if np.random.rand() < 0.05: 
-                logger.info(f"VAD Prob: {speech_prob:.4f} | Triggered: {self.triggered}")
+                logger.debug(f"VAD Prob: {speech_prob:.4f} | Triggered: {self.triggered}")
         except Exception as e:
             logger.error(f"VAD Inference Error: {e}")
-            logger.error(f"Input Shapes: input={input_tensor.shape}, state={self.state.shape}, sr={sr_tensor.shape}")
             self.reset_states()
             return None, 0.0
         
         # State Machine Logic
         segment = None
+        
+        # 1. Check Max Duration (Force Flush)
+        # len(current_speech) is in bytes (float32 = 4 bytes)
+        current_samples = len(self.current_speech) / 4
+        if current_samples >= self.max_speech_samples:
+            logger.info(f"VAD: Max duration reached ({current_samples/self.sampling_rate:.2f}s). Forcing flush.")
+            segment = bytes(self.current_speech)
+            self.reset_states()
+            return segment, float(speech_prob)
+
+        # 2. VAD Trigger Logic
         if speech_prob >= self.threshold:
             # Speech detected
             if not self.triggered:
@@ -112,7 +123,6 @@ class VADIterator:
             
             if self.temp_end >= self.min_silence_samples:
                 # Silence limit reached, check if speech was long enough
-                # Total samples = len(current_speech) / 4 (bytes to float32)
                 total_samples = len(self.current_speech) / 4
                 
                 # Actual speech duration = Total - Silence
@@ -120,6 +130,10 @@ class VADIterator:
                 
                 if speech_duration_samples >= self.min_speech_samples:
                     logger.info(f"VAD: Speech ended. Duration: {speech_duration_samples/self.sampling_rate:.2f}s")
+                    # Remove the trailing silence from the segment for cleaner ASR
+                    # silence_bytes = int(self.temp_end * 4)
+                    # segment = bytes(self.current_speech[:-silence_bytes])
+                    # Actually, keeping a bit of silence is okay, but let's trim most of it
                     segment = bytes(self.current_speech)
                 else:
                     logger.debug(f"VAD: Discarding short noise ({speech_duration_samples/self.sampling_rate:.2f}s)")

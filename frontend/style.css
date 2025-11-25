@@ -1,6 +1,6 @@
 :root {
-    --bg-color: #121212;
-    --card-bg: #1e1e1e;
+    --bg-color: #0d0d0d;
+    --panel-bg: #1a1a1a;
     --text-color: #e0e0e0;
     --accent-color: #bb86fc;
     --positive-color: #03dac6;
@@ -9,109 +9,118 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.container {
-    background-color: var(--card-bg);
+.app-container {
+    display: flex;
+    height: 100%;
+}
+
+/* --- Left Panel: Data --- */
+.data-panel {
+    width: 350px;
+    background-color: var(--panel-bg);
     padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    width: 400px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 1px solid #333;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 10;
 }
 
 header h1 {
     margin: 0;
-    font-size: 2rem;
+    font-size: 1.8rem;
     color: var(--accent-color);
+    letter-spacing: 1px;
 }
 
 header p {
     color: #888;
-    margin-bottom: 2rem;
-}
-
-.indicator-container {
+    font-size: 0.9rem;
     margin-bottom: 2rem;
 }
 
 .indicator {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    margin: 0 auto 1rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: bold;
-    text-transform: uppercase;
+    border: 3px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
-    border: 4px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
 }
 
 .indicator.neutral {
-    background-color: rgba(187, 134, 252, 0.1);
-    color: var(--neutral-color);
     border-color: var(--neutral-color);
+    color: var(--neutral-color);
     box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
 }
 
 .indicator.positive {
-    background-color: rgba(3, 218, 198, 0.1);
-    color: var(--positive-color);
     border-color: var(--positive-color);
-    box-shadow: 0 0 30px rgba(3, 218, 198, 0.4);
+    color: var(--positive-color);
+    box-shadow: 0 0 20px rgba(3, 218, 198, 0.2);
 }
 
 .indicator.negative {
-    background-color: rgba(207, 102, 121, 0.1);
-    color: var(--negative-color);
     border-color: var(--negative-color);
-    box-shadow: 0 0 30px rgba(207, 102, 121, 0.4);
+    color: var(--negative-color);
+    box-shadow: 0 0 20px rgba(207, 102, 121, 0.2);
 }
 
-.confidence-bar {
-    height: 6px;
-    background-color: #333;
-    border-radius: 3px;
-    margin: 0.5rem 0;
-    overflow: hidden;
+.radar-container {
+    width: 100%;
+    height: 250px;
+    margin-bottom: 1rem;
 }
 
-#confidence-fill {
-    height: 100%;
-    background-color: var(--accent-color);
-    transition: width 0.3s ease, background-color 0.3s ease;
+.top-emotions {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.emotion-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #333;
+    font-size: 0.9rem;
+}
+
+.emotion-row .label {
+    font-weight: bold;
+}
+
+.emotion-row .value {
+    color: #888;
 }
 
 .controls {
     display: flex;
     gap: 1rem;
-    justify-content: center;
-    margin-bottom: 2rem;
+    width: 100%;
 }
 
 .btn {
-    padding: 0.8rem 1.5rem;
+    flex: 1;
+    padding: 0.8rem;
     border: none;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
     transition: opacity 0.2s;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .btn.start {
@@ -124,65 +133,79 @@ header p {
     color: #000;
 }
 
-.log-container {
-    text-align: left;
-    background-color: #121212;
-    padding: 1rem;
-    border-radius: 6px;
-    height: 200px;
-    overflow-y: auto;
-    font-size: 0.9rem;
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.log-entry {
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid #333;
-    padding-bottom: 0.5rem;
-}
-
-.log-entry .meta {
+.settings {
+    margin-top: auto;
+    width: 100%;
     font-size: 0.8rem;
     color: #888;
 }
 
+/* --- Right Panel: Chat --- */
+.chat-panel {
+    flex: 1;
+    background-color: var(--bg-color);
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    /* Bottom up */
+}
+
+.log-entry {
+    margin-bottom: 1rem;
+    max-width: 80%;
+    animation: fadeIn 0.3s ease;
+}
+
+.log-entry .meta {
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
 .log-entry .text {
-    color: #fff;
+    background-color: #2a2a2a;
+    padding: 1rem;
+    border-radius: 0 12px 12px 12px;
+    line-height: 1.5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Log Entry Colors */
-.log-entry.happy .meta,
-.log-entry.surprised .meta {
-    color: var(--positive-color);
+/* Chat Colors */
+.log-entry.happy .text {
+    border-left: 4px solid var(--positive-color);
 }
 
-.log-entry.sad .meta,
-.log-entry.angry .meta,
-.log-entry.fearful .meta,
-.log-entry.disgusted .meta {
-    color: var(--negative-color);
+.log-entry.sad .text,
+.log-entry.angry .text,
+.log-entry.fearful .text {
+    border-left: 4px solid var(--negative-color);
 }
 
-.log-entry.neutral .meta,
-.log-entry.calm .meta {
-    color: var(--neutral-color);
+.log-entry.neutral .text {
+    border-left: 4px solid var(--neutral-color);
 }
 
-.log-entry.happy,
-.log-entry.surprised {
-    border-left: 3px solid var(--positive-color);
-    padding-left: 8px;
+.log-entry.system .text {
+    border-left: 4px solid #888;
+    background-color: #1a1a1a;
+    color: #888;
 }
 
-.log-entry.sad,
-.log-entry.angry,
-.log-entry.fearful,
-.log-entry.disgusted {
-    border-left: 3px solid var(--negative-color);
-    padding-left: 8px;
-}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
 
-.log-entry.neutral,
-.log-entry.calm {
-    border-left: 3px solid var(--neutral-color);
-    padding-left: 8px;
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
