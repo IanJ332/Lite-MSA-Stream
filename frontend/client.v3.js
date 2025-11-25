@@ -54,9 +54,6 @@ function initChart() {
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 1,
             animation: {
                 duration: 500, // Smooth transition
                 easing: 'easeOutQuart'
@@ -68,7 +65,7 @@ function initChart() {
                     pointLabels: {
                         display: true, // Show labels so user sees all 6 dimensions
                         color: '#888',
-                        font: { size: 11 }
+                        font: { size: 10 }
                     },
                     ticks: { display: false }, // Hide numbers
                     suggestedMin: 0,
