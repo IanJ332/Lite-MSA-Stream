@@ -49,17 +49,19 @@ header p {
 }
 
 .indicator {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: bold;
     border: 3px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
     margin-bottom: 2rem;
+    text-align: center;
+    overflow: hidden;
 }
 
 .indicator.neutral {
@@ -94,17 +96,23 @@ header p {
 .emotion-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
+    align-items: center;
+    padding: 0.8rem 0;
     border-bottom: 1px solid #333;
     font-size: 0.9rem;
+    line-height: 1;
 }
 
 .emotion-row .label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: bold;
 }
 
 .emotion-row .value {
     color: #888;
+    font-variant-numeric: tabular-nums;
 }
 
 .controls {
