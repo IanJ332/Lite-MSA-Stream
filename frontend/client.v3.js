@@ -54,6 +54,9 @@ function initChart() {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1,
             animation: {
                 duration: 500, // Smooth transition
                 easing: 'easeOutQuart'
@@ -65,7 +68,7 @@ function initChart() {
                     pointLabels: {
                         display: true, // Show labels so user sees all 6 dimensions
                         color: '#888',
-                        font: { size: 10 }
+                        font: { size: 11 }
                     },
                     ticks: { display: false }, // Hide numbers
                     suggestedMin: 0,
@@ -87,17 +90,26 @@ function updateChart(emotions) {
 
     const data = labels.map(label => emotions[label] || 0);
 
+    // Normalize Data for Visualization
+    // The user wants the shape to be "big" and visible.
+    // If we plot raw probabilities (e.g., 0.3), the shape is tiny.
+    // We scale the data so the largest value hits 1.0 (edge of chart).
+    const maxVal = Math.max(...data);
+    const normalizedData = maxVal > 0 ? data.map(v => v / maxVal) : data;
+
     // Find Top 3 Indices
     const indexedEmotions = labels.map((label, index) => ({ label, value: emotions[label] || 0, index }));
     indexedEmotions.sort((a, b) => b.value - a.value);
     const top3Indices = new Set(indexedEmotions.slice(0, 3).map(item => item.index));
 
     // Dynamic Point Styling
-    const pointBackgroundColors = labels.map((_, i) => top3Indices.has(i) ? '#03dac6' : '#bb86fc');
-    const pointBorderColors = labels.map((_, i) => top3Indices.has(i) ? '#fff' : '#bb86fc');
-    const pointRadii = labels.map((_, i) => top3Indices.has(i) ? 6 : 3);
+    // Top 3: Cyan (#03dac6), Large (6px)
+    // Others: Grey (#888), Medium (4px) - Visible even if at center
+    const pointBackgroundColors = labels.map((_, i) => top3Indices.has(i) ? '#03dac6' : '#444');
+    const pointBorderColors = labels.map((_, i) => top3Indices.has(i) ? '#fff' : '#666');
+    const pointRadii = labels.map((_, i) => top3Indices.has(i) ? 6 : 4);
 
-    emotionChart.data.datasets[0].data = data;
+    emotionChart.data.datasets[0].data = normalizedData;
     emotionChart.data.datasets[0].pointBackgroundColor = pointBackgroundColors;
     emotionChart.data.datasets[0].pointBorderColor = pointBorderColors;
     emotionChart.data.datasets[0].pointRadius = pointRadii;
@@ -117,7 +129,10 @@ function updateTopEmotions(emotions) {
 
     topEmotionsList.innerHTML = sorted.map(([emo, val]) => `
         <div class="emotion-row">
-            <span class="label">${emotionEmojis[emo] || ''} ${emo.toUpperCase()}</span>
+            <span class="label">
+                <span class="emoji">${emotionEmojis[emo] || ''}</span>
+                <span class="text">${emo.toUpperCase()}</span>
+            </span>
             <span class="value">${(val * 100).toFixed(0)}%</span>
         </div>
     `).join('');
