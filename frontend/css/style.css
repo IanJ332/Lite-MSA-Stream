@@ -15,15 +15,25 @@
     --text-muted: #A1A1AA;
     --border-color: rgba(255, 255, 255, 0.08);
     --glass-blur: 20px;
+
+    /* Highlight Colors (Dark) */
+    --text-highlight: #ffffff;
+    --bg-highlight: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="light"] {
     /* Light Mode */
-    --bg-body: #F3F4F6;
-    --bg-panel: rgba(255, 255, 255, 0.8);
-    --text-main: #1F2937;
-    --text-muted: #6B7280;
-    --border-color: rgba(0, 0, 0, 0.05);
+    --bg-body: #E5E7EB;
+    /* Slightly darker gray */
+    --bg-panel: #FFFFFF;
+    /* Solid white for better contrast */
+    --text-main: #111827;
+    --text-muted: #4B5563;
+    --border-color: rgba(0, 0, 0, 0.1);
+
+    /* Highlight Colors (Light) */
+    --text-highlight: #111827;
+    --bg-highlight: rgba(0, 0, 0, 0.05);
 }
 
 /* --- Base Styles --- */
@@ -73,10 +83,10 @@ body {
 }
 
 .radar-label.highlight {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--bg-highlight);
+    color: var(--text-highlight);
     font-weight: 700;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border: 1px solid currentColor;
     z-index: 10;
 }

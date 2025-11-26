@@ -1,7 +1,7 @@
 // --- Configuration ---
 const CONFIG = {
     wsUrl: 'ws://localhost:8000/ws/analyze',
-    emotions: ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'neutral'],
+    emotions: ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'neutral'], // NO CALM
     colors: {
         happy: '#10B981',
         sad: '#3B82F6',
@@ -32,6 +32,8 @@ let ws;
 // --- 1. Visualizer (Three.js) ---
 const initVisualizer = () => {
     const container = document.getElementById('visualizer-container');
+    if (!container) return;
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -39,8 +41,8 @@ const initVisualizer = () => {
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // Geometry
-    const geometry = new THREE.IcosahedronGeometry(1.8, 10); // High detail sphere
+    // Geometry - High detail to avoid "sharp squares"
+    const geometry = new THREE.IcosahedronGeometry(1.5, 30);
 
     // Custom Shader Material
     const material = new THREE.ShaderMaterial({
@@ -55,7 +57,7 @@ const initVisualizer = () => {
             varying vec3 vNormal;
             varying vec3 vPosition;
 
-            // Simplex Noise (Simplified)
+            // Simplex Noise
             vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
@@ -113,7 +115,8 @@ const initVisualizer = () => {
                 
                 // Displacement Logic
                 float noise = snoise(position * 2.0 + uTime * 0.5);
-                float displacement = noise * (0.2 + uAudioLevel * 0.5);
+                // Smoother, less spikey displacement
+                float displacement = noise * (0.1 + uAudioLevel * 0.3);
                 
                 vec3 newPosition = position + normal * displacement;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
@@ -133,16 +136,15 @@ const initVisualizer = () => {
                 vec3 baseColor = uColor * 0.6;
                 vec3 glowColor = uColor * 1.5;
                 
-                gl_FragColor = vec4(mix(baseColor, glowColor, fresnel), 0.8); // Semi-transparent
+                gl_FragColor = vec4(mix(baseColor, glowColor, fresnel), 0.85); 
             }
         `,
-        transparent: true,
-        // blending: THREE.AdditiveBlending // Optional: for more "plasma" look
+        transparent: true
     });
 
     const sphere = new THREE.Mesh(geometry, material);
     scene.add(sphere);
-    camera.position.z = 5;
+    camera.position.z = 4.5; // Slightly closer
 
     // Animation Loop
     const animate = () => {
@@ -227,7 +229,7 @@ const initRadar = () => {
 
         const scale = radarChart.scales.r;
         const center = { x: radarChart.width / 2, y: radarChart.height / 2 };
-        const radius = scale.drawingArea + 20; // Push out slightly
+        const radius = scale.drawingArea + 25; // Push out slightly more to avoid overlap
 
         CONFIG.emotions.forEach((emotion, i) => {
             const angle = scale.getIndexAngle(i) - Math.PI / 2;
@@ -276,23 +278,24 @@ const updateUI = (data) => {
 
     // 3. Update Visualizer State
     state.targetColor.set(topColor);
-    // Use confidence or audio level if available, else simulate breathing
     state.audioLevel = data.confidence || 0.5;
 
-    // 4. Update Scoreboard
+    // 4. Update Scoreboard (SINGLE COLUMN, LARGE TEXT)
     const list = document.getElementById('top-emotions-list');
+    list.className = 'space-y-4'; // Vertical stack, no grid
     list.innerHTML = '';
+
     sortedEmotions.forEach(([emotion, score], index) => {
         const color = CONFIG.colors[emotion];
         const width = (score * 100).toFixed(0) + '%';
 
         list.innerHTML += `
             <div class="flex flex-col gap-1">
-                <div class="flex justify-between text-[10px] uppercase font-bold text-white/60">
-                    <span style="color: ${color}">${emotion}</span>
+                <div class="flex justify-between text-sm font-bold opacity-90">
+                    <span style="color: ${color} !important">${emotion}</span>
                     <span>${width}</span>
                 </div>
-                <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                     <div class="h-full rounded-full transition-all duration-500" style="width: ${width}; background-color: ${color}"></div>
                 </div>
             </div>
@@ -311,34 +314,38 @@ const addLogEntry = (data) => {
     div.className = 'msg-card p-4 cursor-pointer group';
     div.style.borderLeftColor = color;
 
-    // Distribution Bars for Expanded View
+    // Distribution Bars for Expanded View (SINGLE COLUMN)
     let distBars = '';
-    CONFIG.emotions.forEach(e => {
-        const val = (data.emotions[e] || 0) * 100;
+    const sortedEmotions = Object.entries(data.emotions).sort(([, a], [, b]) => b - a);
+
+    sortedEmotions.forEach(([e, score]) => {
+        const val = (score * 100).toFixed(0);
         distBars += `
-            <div class="flex items-center gap-2 text-[10px] mb-1">
-                <span class="w-16 text-right opacity-60 capitalize">${e}</span>
-                <div class="flex-1 h-1 bg-white/10 rounded-full">
+            <div class="flex items-center gap-2 text-xs mb-2">
+                <span class="w-20 text-right opacity-70 capitalize">${e}</span>
+                <div class="flex-1 h-1.5 bg-white/10 rounded-full">
                     <div class="h-full rounded-full" style="width: ${val}%; background-color: ${CONFIG.colors[e]}"></div>
                 </div>
-                <span class="w-8 opacity-60">${val.toFixed(0)}%</span>
+                <span class="w-10 opacity-70">${val}%</span>
             </div>
         `;
     });
 
     div.innerHTML = `
-        <div class="flex justify-between items-start mb-1">
-            <span class="text-[10px] font-mono opacity-40">${new Date().toLocaleTimeString()}</span>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white/5 uppercase tracking-wider" style="color: ${color}">
+        <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-mono opacity-50">${new Date().toLocaleTimeString()}</span>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-white/5 uppercase tracking-wider" style="color: ${color}">
                 ${data.sentiment} ${(data.confidence * 100).toFixed(0)}%
             </span>
         </div>
-        <p class="text-sm leading-relaxed text-white/90">${data.transcription || "..."}</p>
+        <p class="text-base leading-relaxed opacity-90">${data.transcription || "..."}</p>
         
         <!-- Expanded Details -->
         <div class="msg-details">
-            <div class="text-[10px] uppercase tracking-widest opacity-40 mb-2">Probability Distribution</div>
-            ${distBars}
+            <div class="text-xs uppercase tracking-widest opacity-50 mb-3 mt-2">Probability Distribution</div>
+            <div class="flex flex-col gap-1">
+                ${distBars}
+            </div>
         </div>
     `;
 
@@ -376,7 +383,8 @@ const startAudioCapture = async () => {
                 // Calculate rough volume for visualizer
                 let sum = 0;
                 for (let i = 0; i < inputData.length; i++) sum += Math.abs(inputData[i]);
-                state.audioLevel = sum / inputData.length * 5.0; // Boost gain for visual
+                // Boost gain for visual (Increased sensitivity as requested)
+                state.audioLevel = sum / inputData.length * 15.0;
 
                 ws.send(inputData.buffer);
             }
@@ -428,17 +436,18 @@ const connectWebSocket = () => {
         stopAudioCapture();
 
         // Ensure UI resets
-        const btn = document.getElementById('session-btn');
-        btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Analysis';
-        btn.classList.remove('from-red-500', 'to-red-600');
-        btn.classList.add('from-green-500', 'to-green-600');
-        state.isRecording = false;
+        stopSession();
     };
 
     ws.onerror = (err) => {
         console.error('WebSocket error', err);
         ws.close();
     };
+};
+
+const updateLiveStatus = (isLive) => {
+    const el = document.getElementById('live-indicator');
+    if (el) el.style.opacity = isLive ? '1' : '0';
 };
 
 const startSession = () => {
@@ -450,6 +459,7 @@ const startSession = () => {
     btn.classList.add('from-red-500', 'to-red-600');
     btn.classList.remove('from-green-500', 'to-green-600');
 
+    updateLiveStatus(true);
     connectWebSocket();
 };
 
@@ -461,6 +471,7 @@ const stopSession = () => {
     btn.classList.remove('from-red-500', 'to-red-600');
     btn.classList.add('from-green-500', 'to-green-600');
 
+    updateLiveStatus(false);
     if (ws) ws.close();
     stopAudioCapture();
 };
@@ -489,8 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Auto-start (optional, or wait for user click)
-    // startSession(); 
     // Set initial button state
     stopSession();
 });

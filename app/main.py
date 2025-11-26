@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.websockets import WebSocketState
 
 # Services
 from app.services.vad_iterator import VADIterator
@@ -161,7 +162,7 @@ async def inference_worker(queue: asyncio.Queue, websocket: WebSocket, fusion_en
                 data_logger.info(json.dumps(response))
                 
                 # Send back to client
-                if websocket.client_state.name == "CONNECTED":
+                if websocket.client_state == WebSocketState.CONNECTED:
                     await websocket.send_json(response)
                     
             except Exception as e:
@@ -193,10 +194,20 @@ async def websocket_endpoint(websocket: WebSocket):
     
     try:
         while True:
+            if websocket.client_state != WebSocketState.CONNECTED:
+                break
+
             # Receive Message (Text or Bytes)
             # This loop must remain FAST to handle VAD updates
-            message = await websocket.receive()
+            try:
+                message = await websocket.receive()
+            except RuntimeError:
+                # Handle "Cannot call 'receive' once a disconnect message has been received"
+                break
             
+            if message["type"] == "websocket.disconnect":
+                break
+
             if "text" in message:
                 # Handle Config Message
                 try:
@@ -223,11 +234,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 speech_segment, speech_prob = vad_iterator.process(chunk)
                 
                 # Send VAD Update (Visual Feedback) - Immediate
-                await websocket.send_json({
-                    "type": "vad_update",
-                    "prob": speech_prob,
-                    "triggered": vad_iterator.triggered
-                })
+                if websocket.client_state == WebSocketState.CONNECTED:
+                    await websocket.send_json({
+                        "type": "vad_update",
+                        "prob": speech_prob,
+                        "triggered": vad_iterator.triggered
+                    })
                 
                 # 2. Producer: Push to Queue if Segment Ready
                 if speech_segment:
@@ -246,7 +258,8 @@ async def websocket_endpoint(websocket: WebSocket):
         except asyncio.CancelledError:
             pass
         try:
-            await websocket.close()
+            if websocket.client_state == WebSocketState.CONNECTED:
+                await websocket.close()
         except RuntimeError:
             pass
 
