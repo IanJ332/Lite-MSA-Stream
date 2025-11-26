@@ -127,8 +127,8 @@ async def inference_worker(queue: asyncio.Queue, websocket: WebSocket, fusion_en
                 final_emotions = fusion_engine.fuse(asr_result, emotion_probs, text_emotions)
                 
                 # STRICT Filtering (Hallucination Blocklist)
-                if final_emotions is None:
-                    logger.info(f"Discarded Noise/Hallucination: '{text_content}'")
+                if not final_emotions:
+                    logger.info(f"Discarded (Empty Emotions): '{text_content}'")
                     queue.task_done()
                     continue
 
