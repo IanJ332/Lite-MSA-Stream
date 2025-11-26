@@ -1,14 +1,14 @@
 // --- Configuration ---
 const CONFIG = {
     wsUrl: 'ws://localhost:8000/ws/analyze',
-    emotions: ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'neutral'], // NO CALM
+    emotions: ['Happy', 'Sad', 'Angry', 'Fearful', 'Disgusted', 'Neutral'], // Capitalized for consistency
     colors: {
-        happy: '#10B981',
-        sad: '#3B82F6',
-        angry: '#EF4444',
-        fearful: '#F59E0B',
-        disgusted: '#8B5CF6',
-        neutral: '#9CA3AF'
+        Happy: '#10B981',
+        Sad: '#3B82F6',
+        Angry: '#EF4444',
+        Fearful: '#F59E0B',
+        Disgusted: '#8B5CF6',
+        Neutral: '#9CA3AF'
     }
 };
 
@@ -16,8 +16,8 @@ const CONFIG = {
 let state = {
     isConnected: false,
     isRecording: false,
-    currentEmotions: { happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, neutral: 1 },
-    targetColor: new THREE.Color(CONFIG.colors.neutral),
+    currentEmotions: { Happy: 0, Sad: 0, Angry: 0, Fearful: 0, Disgusted: 0, Neutral: 1 },
+    targetColor: new THREE.Color(CONFIG.colors.Neutral),
     audioLevel: 0,
     isDark: true
 };
@@ -41,14 +41,14 @@ const initVisualizer = () => {
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // Geometry - High detail to avoid "sharp squares"
-    const geometry = new THREE.IcosahedronGeometry(1.5, 30);
+    // Geometry - High detail
+    const geometry = new THREE.IcosahedronGeometry(2.2, 30);
 
     // Custom Shader Material
     const material = new THREE.ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
-            uColor: { value: new THREE.Color(CONFIG.colors.neutral) },
+            uColor: { value: new THREE.Color(CONFIG.colors.Neutral) },
             uAudioLevel: { value: 0.0 }
         },
         vertexShader: `
@@ -143,6 +143,7 @@ const initVisualizer = () => {
     });
 
     const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.y = 0.3; // Move up to avoid text overlap
     scene.add(sphere);
     camera.position.z = 4.5; // Slightly closer
 
@@ -229,7 +230,7 @@ const initRadar = () => {
 
         const scale = radarChart.scales.r;
         const center = { x: radarChart.width / 2, y: radarChart.height / 2 };
-        const radius = scale.drawingArea + 25; // Push out slightly more to avoid overlap
+        const radius = scale.drawingArea + 22; // Increased to prevent overlap with title
 
         CONFIG.emotions.forEach((emotion, i) => {
             const angle = scale.getIndexAngle(i) - Math.PI / 2;
@@ -249,13 +250,25 @@ const initRadar = () => {
 
 // --- 3. UI Updates ---
 const updateUI = (data) => {
+    // Normalize data keys to Capitalized
+    const normalizedEmotions = {};
+    Object.keys(data.emotions).forEach(k => {
+        const key = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+        // Filter: Only allow emotions defined in CONFIG
+        if (CONFIG.emotions.includes(key)) {
+            normalizedEmotions[key] = data.emotions[k];
+        }
+    });
+    data.emotions = normalizedEmotions;
+    data.sentiment = data.sentiment.charAt(0).toUpperCase() + data.sentiment.slice(1).toLowerCase();
+
     // 1. Update Chart
     const emotionValues = CONFIG.emotions.map(e => data.emotions[e] || 0);
     radarChart.data.datasets[0].data = emotionValues;
 
     // Dynamic Border Color based on Top Emotion
     const topEmotion = data.sentiment;
-    const topColor = CONFIG.colors[topEmotion] || CONFIG.colors.neutral;
+    const topColor = CONFIG.colors[topEmotion] || CONFIG.colors.Neutral;
     radarChart.data.datasets[0].borderColor = topColor;
     radarChart.data.datasets[0].backgroundColor = topColor + '33'; // 20% opacity
     radarChart.update();
@@ -320,9 +333,10 @@ const addLogEntry = (data) => {
 
     sortedEmotions.forEach(([e, score]) => {
         const val = (score * 100).toFixed(0);
+        // Added color style to the emotion name
         distBars += `
             <div class="flex items-center gap-2 text-xs mb-2">
-                <span class="w-20 text-right opacity-70 capitalize">${e}</span>
+                <span class="w-20 text-right font-bold capitalize" style="color: ${CONFIG.colors[e]}">${e}</span>
                 <div class="flex-1 h-1.5 bg-white/10 rounded-full">
                     <div class="h-full rounded-full" style="width: ${val}%; background-color: ${CONFIG.colors[e]}"></div>
                 </div>
@@ -343,7 +357,7 @@ const addLogEntry = (data) => {
         <!-- Expanded Details -->
         <div class="msg-details">
             <div class="text-xs uppercase tracking-widest opacity-50 mb-3 mt-2">Probability Distribution</div>
-            <div class="flex flex-col gap-1">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1">
                 ${distBars}
             </div>
         </div>
@@ -446,8 +460,18 @@ const connectWebSocket = () => {
 };
 
 const updateLiveStatus = (isLive) => {
-    const el = document.getElementById('live-indicator');
-    if (el) el.style.opacity = isLive ? '1' : '0';
+    const dot = document.getElementById('live-dot');
+    const text = document.getElementById('live-text');
+
+    if (isLive) {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-happy animate-ping";
+        text.className = "text-happy";
+        text.innerText = "LIVE";
+    } else {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-gray-500";
+        text.className = "text-gray-500";
+        text.innerText = "OFFLINE";
+    }
 };
 
 const startSession = () => {
@@ -488,6 +512,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.setAttribute('data-theme', state.isDark ? 'dark' : 'light');
         const icon = toggleBtn.querySelector('i');
         icon.className = state.isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+
+        // Update radar chart colors
+        if (radarChart) {
+            const gridColor = state.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const borderColor = state.isDark ? '#ffffff' : '#000000';
+            radarChart.options.scales.r.angleLines.color = gridColor;
+            radarChart.options.scales.r.grid.color = gridColor;
+            radarChart.data.datasets[0].borderColor = borderColor;
+            radarChart.data.datasets[0].pointBackgroundColor = borderColor;
+            radarChart.data.datasets[0].pointBorderColor = borderColor;
+            radarChart.data.datasets[0].pointHoverBackgroundColor = borderColor;
+            radarChart.data.datasets[0].pointHoverBorderColor = borderColor;
+            radarChart.data.datasets[0].backgroundColor = state.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            radarChart.update('none');
+        }
     });
 
     // Session Control
