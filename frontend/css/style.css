@@ -1,0 +1,119 @@
+/* --- Theme Engine --- */
+:root {
+    /* Palette */
+    --color-happy: #10B981;
+    --color-sad: #3B82F6;
+    --color-angry: #EF4444;
+    --color-fearful: #F59E0B;
+    --color-disgusted: #8B5CF6;
+    --color-neutral: #9CA3AF;
+
+    /* Dark Mode (Default) */
+    --bg-body: #050505;
+    --bg-panel: rgba(18, 18, 18, 0.6);
+    --text-main: #EDEDED;
+    --text-muted: #A1A1AA;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --glass-blur: 20px;
+}
+
+[data-theme="light"] {
+    /* Light Mode */
+    --bg-body: #F3F4F6;
+    --bg-panel: rgba(255, 255, 255, 0.8);
+    --text-main: #1F2937;
+    --text-muted: #6B7280;
+    --border-color: rgba(0, 0, 0, 0.05);
+}
+
+/* --- Base Styles --- */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+}
+
+.bg-panel-bg {
+    background-color: var(--bg-panel);
+}
+
+.text-text-main {
+    color: var(--text-main);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* --- Radar Chart Labels --- */
+.radar-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    text-transform: capitalize;
+}
+
+.radar-label.highlight {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid currentColor;
+    z-index: 10;
+}
+
+/* --- Message Card --- */
+.msg-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-left-width: 3px;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.msg-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.msg-details {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+
+.msg-card.expanded .msg-details {
+    max-height: 200px;
+    /* Arbitrary large enough height */
+    opacity: 1;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* --- Utility --- */
+.text-shadow-glow {
+    text-shadow: 0 0 10px currentColor;
+}

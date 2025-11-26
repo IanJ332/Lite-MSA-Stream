@@ -4,56 +4,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vox-Pathos | Real-time Sentiment</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Lite-MSA-Stream</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Tailwind Config for Custom Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        happy: 'var(--color-happy)',
+                        sad: 'var(--color-sad)',
+                        angry: 'var(--color-angry)',
+                        fearful: 'var(--color-fearful)',
+                        disgusted: 'var(--color-disgusted)',
+                        neutral: 'var(--color-neutral)',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body>
-    <div class="app-container">
-        <!-- Left Panel: Real-time Data -->
-        <aside class="data-panel">
-            <header>
-                <h1>Vox-Pathos</h1>
-                <p>Real-time Multimodal AI</p>
-            </header>
+<body class="bg-body text-text-main transition-colors duration-300 overflow-hidden h-screen w-screen flex">
 
-            <div class="indicator-container">
-                <div id="sentiment-indicator" class="indicator neutral">
-                    <span id="sentiment-text">READY</span>
-                </div>
+    <!-- LEFT PANEL: Dashboard (Fixed, No Scroll) -->
+    <aside
+        class="w-80 h-full flex flex-col border-r border-white/10 bg-panel-bg backdrop-blur-xl z-20 shadow-2xl relative">
+
+        <!-- 1. Header -->
+        <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-wave-square text-happy"></i>
+                <span class="font-bold tracking-wider text-sm">LITE-MSA</span>
             </div>
+            <button id="theme-toggle"
+                class="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all">
+                <i class="fa-solid fa-moon text-xs"></i>
+            </button>
+        </header>
 
-            <div class="radar-container">
+        <!-- 2. Visualizer (Liquid Core) -->
+        <div
+            class="relative w-full h-32 flex-shrink-0 flex items-center justify-center overflow-hidden border-b border-white/5 bg-black/20">
+            <div id="visualizer-container" class="absolute inset-0 w-full h-full"></div>
+            <div class="absolute bottom-2 text-[10px] uppercase tracking-[0.2em] text-white/30 font-medium">Analyzing...
+            </div>
+        </div>
+
+        <!-- 3. Radar Chart (Emotional Compass) -->
+        <div class="flex-1 min-h-0 flex flex-col relative p-4">
+            <h3 class="text-[10px] uppercase tracking-widest text-white/40 mb-2 text-center font-semibold">Emotional
+                Compass</h3>
+
+            <div class="relative flex-1 w-full flex items-center justify-center" style="max-height: 180px;">
+                <!-- Chart Canvas -->
                 <canvas id="emotionRadar"></canvas>
-            </div>
 
-            <!-- Top 3 Emotions List -->
-            <div id="top-emotions" class="top-emotions">
-                <!-- JS will populate this -->
-            </div>
-
-            <div class="controls">
-                <button id="start-btn" class="btn start">Start</button>
-                <button id="stop-btn" class="btn stop" disabled>Stop</button>
-            </div>
-
-            <div class="settings">
-                <label>Sensitivity: <span id="sensitivity-val">70%</span></label>
-                <input type="range" id="sensitivity-slider" min="0" max="100" value="70">
-            </div>
-        </aside>
-
-        <!-- Right Panel: Chat Stream -->
-        <main class="chat-panel">
-            <div id="log-output" class="chat-stream">
-                <div class="log-entry system">
-                    <div class="text">System Ready. Click Start to begin.</div>
+                <!-- HTML Labels (Absolute Overlay) -->
+                <div id="radar-labels" class="absolute inset-0 pointer-events-none">
+                    <!-- Labels injected by JS -->
                 </div>
             </div>
-        </main>
-    </div>
-    <script src="client.v3.js"></script>
+        </div>
+
+        <!-- 4. Top 3 Scoreboard -->
+        <div class="px-6 py-4 border-t border-white/5 flex-shrink-0 bg-black/10">
+            <h3 class="text-[10px] uppercase tracking-widest text-white/40 mb-3 font-semibold">Top Detected</h3>
+            <div id="top-emotions-list" class="space-y-3">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+
+        <!-- 5. Controls -->
+        <div class="p-6 pt-2 flex-shrink-0">
+            <button id="session-btn"
+                class="w-full h-10 rounded bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white text-xs font-bold tracking-widest uppercase shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2">
+                <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                End Session
+            </button>
+        </div>
+    </aside>
+
+    <!-- RIGHT PANEL: The Stream -->
+    <main class="flex-1 h-full flex flex-col relative z-10">
+
+        <!-- Stream Header -->
+        <div
+            class="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-panel-bg/50 backdrop-blur-sm flex-shrink-0">
+            <h2 class="text-sm font-semibold text-white/80">Live Transcription Stream</h2>
+            <div class="flex items-center gap-2 text-[10px] text-happy font-mono">
+                <div class="w-1.5 h-1.5 rounded-full bg-happy animate-ping"></div>
+                LIVE
+            </div>
+        </div>
+
+        <!-- Chat Log (Scrollable) -->
+        <div id="chat-log" class="flex-1 overflow-y-auto p-8 space-y-4 scroll-smooth">
+            <!-- Messages injected by JS -->
+
+            <!-- Welcome Message -->
+            <div class="opacity-50 text-center text-xs py-10">
+                <p>System Ready. Waiting for audio input...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Main Logic -->
+    <script src="js/main.js"></script>
 </body>
 
 </html>
