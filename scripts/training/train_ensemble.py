@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from app.models.fusion_layer import FusionNet
 
 # Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 class AudioDataset(Dataset):
     def __init__(self, features, labels):

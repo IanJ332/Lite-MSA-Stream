@@ -182,7 +182,6 @@ let radarChart;
 
 const initRadar = () => {
     const ctx = document.getElementById('emotionRadar').getContext('2d');
-
     radarChart = new Chart(ctx, {
         type: 'radar',
         data: {
@@ -192,10 +191,9 @@ const initRadar = () => {
                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 borderColor: '#ffffff',
                 borderWidth: 2,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#fff'
+                pointRadius: 0, // No dots
+                pointHoverRadius: 0, // No dots on hover
+                fill: true
             }]
         },
         options: {
@@ -520,10 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
             radarChart.options.scales.r.angleLines.color = gridColor;
             radarChart.options.scales.r.grid.color = gridColor;
             radarChart.data.datasets[0].borderColor = borderColor;
-            radarChart.data.datasets[0].pointBackgroundColor = borderColor;
-            radarChart.data.datasets[0].pointBorderColor = borderColor;
-            radarChart.data.datasets[0].pointHoverBackgroundColor = borderColor;
-            radarChart.data.datasets[0].pointHoverBorderColor = borderColor;
+            // Points removed, no need to update their colors
             radarChart.data.datasets[0].backgroundColor = state.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
             radarChart.update('none');
         }

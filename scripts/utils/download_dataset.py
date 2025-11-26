@@ -11,7 +11,8 @@ def download_ravdess():
         print(f"Dataset downloaded to cache: {path}")
         
         # Define local target directory
-        target_dir = "ravdess_data"
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+        target_dir = os.path.join(project_root, "ravdess_data")
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
             

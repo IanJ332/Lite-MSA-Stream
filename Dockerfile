@@ -6,9 +6,11 @@ WORKDIR /app
 
 # Install system dependencies
 # libsndfile1 is required for soundfile/librosa
+# ffmpeg is required for audio processing
 # gcc/python3-dev are needed for building some python extensions
 RUN apt-get update && apt-get install -y \
     libsndfile1 \
+    ffmpeg \
     gcc \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*

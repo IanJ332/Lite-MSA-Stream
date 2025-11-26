@@ -4,7 +4,9 @@ from transformers import AutoTokenizer
 
 def setup_text_model():
     model_id = "j-hartmann/emotion-english-distilroberta-base"
-    output_dir = os.path.join("app", "models", "text_emotion_model")
+    # Find project root (2 levels up from scripts/utils)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    output_dir = os.path.join(project_root, "app", "models", "text_emotion_model")
     
     print(f"Downloading and Converting {model_id} to ONNX...")
     print(f"Output Directory: {output_dir}")
