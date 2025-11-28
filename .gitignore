@@ -1,60 +1,51 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-venv/
 env/
-ENV/
-
-# Logs
-logs/
-*.log
-*.out
-*.jsonl
-
-# Data and Models
-ravdess_data/
-
-*.onnx
-*.pth
-*.bin
-*.wav
-*.zip
+venv/
+.env
 
 # IDE
-.vscode/
 .idea/
-
-# OS
+.vscode/
+*.swp
 .DS_Store
-Thumbs.db
 
-# Docker
+# Project Specific Large Files
+*.pth
+*.bin
+*.h5
+models/
+exported_model/
 
+# Datasets
+crema_data/
+ravdess_data/
+tess_data/
+temp_crema_d/
 
-# Testing
-benchmark_results.txt
-benchmark_debug.txt
-benchmark_regression.txt
-debug_results_*.out
-*_output.txt
-test_output/
+# Logs and Outputs
+logs/
+outputs/
+crema_validation/
+*.log
+debug_output.txt
+error.txt
+export_log.txt
+crema_validation_log.jsonl
+test_crema.wav
+
+# Junk
+draft.py
+temp.txt
+untitled.ipynb
+test_old.py
+
+# Node.js
+node_modules/
+frontend/node_modules/
+npm-debug.log
+yarn-error.log

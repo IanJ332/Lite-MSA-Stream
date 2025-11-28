@@ -1,101 +1,126 @@
-*   **RAM**: 8GB minimum (16GB recommended for training).
-*   **CPU**: Modern Multi-core CPU (AVX2 support recommended).
+# Yayo-MSA-Stream
 
-*   **RAM**: 8GB minimum (16GB recommended for training).
-*   **CPU**: Modern Multi-core CPU (AVX2 support recommended).
+> **Real-Time Multimodal Sentiment Analysis on CPU**
+>
+> *Maintained by YayoKiwi*
 
-### 2. Installation
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-green.svg)](https://www.docker.com/)
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
 
-#### Option A: Docker (Recommended)
-The easiest way to run the application is using Docker. This ensures all dependencies (including system libraries like ffmpeg) are installed correctly.
+**Yayo-MSA-Stream** is not just another sentiment analysis model; it's an engineering answer to a difficult question: *How do we bring state-of-the-art, multimodal emotion AI to standard hardware?*
 
-1.  **Build the Image**:
+This project implements a high-performance, asynchronous streaming architecture that fuses **Acoustic Features (Tone)** and **Linguistic Content (Text)** in real-time. It runs efficiently on consumer CPUs, making advanced emotion AI accessible for edge devices, cost-effective cloud deployments (like Cloud Run), and local applications.
+
+---
+
+## ⚡ The "Wow" Factor
+
+### 1. Instant Analysis
+Imagine a system that knows you're angry not just because you said "I hate this," but because your voice *trembled* with rage.
+
+![Real-time Analysis](Demo_res/analysis.gif)
+
+### 2. Simple Interaction
+One click to start. No complex setup required for the end user.
+
+![Click to Start](Demo_res/click2start.gif)
+
+### 3. Modern UI
+Features a sleek, responsive design with Dark/Light mode support.
+
+![Light/Dark Mode](Demo_res/lightORdark.gif)
+
+---
+
+## 🚀 Key Features
+
+*   **The "Ears" (Acoustic Pipeline)**:
+    *   **Silero VAD (ONNX)** acts as a strict **gatekeeper**, filtering silence with <1ms latency to save compute.
+    *   Uses a robust **Ensemble of HuBERT (Phonetics) and Wav2Vec2 (Robustness)** to capture subtle tonal nuances.
+    *   Classifies tone using a custom **FusionNet** (2048-dim input) for high-fidelity emotion detection.
+*   **The "Brain" (Text Pipeline)**:
+    *   Transcribes speech using **Faster-Whisper (Int8)** for speed.
+    *   Analyzes semantic sentiment with **DistilRoberta (ONNX)**, capturing implicit emotions like sarcasm.
+*   **The Speed**:
+    *   Fully optimized for CPU inference using **ONNX Runtime** and **Int8 Quantization** (Text Pipeline).
+    *   Asynchronous **FastAPI + WebSockets** architecture handles streams without blocking.
+*   **The Fusion**:
+    *   Smart **Late Fusion** logic combines acoustic and text probabilities.
+    *   **Real-world Example**: Handles "Smiling Voice" (Happy tone, Sad text) by weighing acoustic confidence against semantic meaning.
+
+---
+
+## 🏗️ Architecture
+
+![Architecture Diagram](Demo_res/flow.png)
+
+The system follows a "Monolithic Microservice" pattern to minimize network overhead. Audio flows in via WebSockets, is split into parallel processing queues, and results are fused at the decision layer.
+
+### Performance Metrics (CPU)
+
+| Metric | Value | Notes |
+| :--- | :--- | :--- |
+| **VAD Latency** | **< 5 ms** | Gatekeeper (ONNX) |
+| **Acoustic Accuracy** | **High** | Dual-Backbone Ensemble |
+| **Text Inference** | **~ 30 ms** | DistilBERT ONNX |
+| **End-to-End Latency** | **< 800 ms** | Dependent on chunk size |
+
+*Note: The current Acoustic Pipeline prioritizes accuracy (Ensemble) over raw speed. Future updates will introduce a distilled "Lite" acoustic mode.*
+
+---
+
+## 🛠️ Quick Start
+
+### Option A: Docker (Recommended)
+
+Get up and running in minutes without worrying about dependencies.
+
+1.  **Build**:
     ```bash
-    docker build -t vox-pathos .
+    docker build -t yayo-msa-stream .
     ```
-
-2.  **Run the Container**:
+2.  **Run**:
     ```bash
-    docker run -p 8000:8000 vox-pathos
+    docker run -p 8000:8000 yayo-msa-stream
     ```
-    *   Access the UI at `http://localhost:8000`.
+3.  **Experience**: Open `http://localhost:8000` and start speaking!
 
-#### Option B: Manual Installation
+### Option B: Manual Setup
 
-1.  **Create a Virtual Environment**:
+1.  **Environment**:
     ```bash
     python -m venv venv
-    # Windows
-    .\venv\Scripts\activate
-    # Linux/Mac
-    source venv/bin/activate
-    ```
-
-2.  **Install Dependencies**:
-    ```bash
+    source venv/bin/activate  # or .\venv\Scripts\activate on Windows
     pip install -r requirements.txt
     ```
-
----
-
-### 3. Project Structure
-
-The project is organized as follows:
-
-*   `app/`: Main application code (API, Services, Models).
-*   `frontend/`: Web UI (HTML, JS, CSS).
-*   `scripts/`: Utility and training scripts.
-    *   `training/`: Scripts for data preparation and model training (`prepare_data.py`, `train_ensemble.py`).
-    *   `testing/`: Scripts for benchmarking and validation.
-    *   `utils/`: Helper scripts (downloaders, setup).
-*   `docs/`: Documentation and reports.
-*   `outputs/`: Logs and training outputs.
-*   `models/`: Directory for storing model weights.
-
----
-
-### 4. Data Preparation & Training (Optional)
-
-If you want to retrain the model or run it from scratch (without pre-trained weights):
-
-1.  **Prepare Data**:
-    Ensure `ravdess_data/` is in the project root.
+2.  **Run**:
     ```bash
-    python scripts/training/prepare_data.py
-    ```
-    *   This creates `all_features.h5` in the root.
-
-2.  **Train Model**:
-    ```bash
-    python scripts/training/train_ensemble.py
-    ```
-    *   This creates `fusion_weights.pth` in the root.
-
----
-
-### 5. Running the Application (Manual)
-
-1.  **Start the Server**:
-    ```bash
-    # Windows
-    start_app.bat
-    # Or manually:
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    uvicorn app.main:app --reload
     ```
 
-2.  **Access the UI**:
-    *   Open `http://localhost:8000`
+---
+
+## 📚 Deep Dive
+
+Want to understand the math behind the magic? Check out our detailed technical reports:
+
+*   **[Technical Blueprint (English)](docs/lite.md)**: A comprehensive guide to the system's architecture, data flow, and optimization strategies.
+*   **[Technical Report](docs/technical_report.md)**: Detailed analysis of model training, domain generalization (RAVDESS vs CREMA-D), and accuracy findings.
 
 ---
 
-### 6. Troubleshooting
+## 🔮 Roadmap
 
-*   **`ModuleNotFoundError`**: Ensure you are in the virtual environment and have installed requirements.
-*   **`fusion_weights.pth not found`**: The app will run in "Acoustic Only" mode or fallback mode. Train the model to generate weights.
-*   **Docker Audio Issues**: Docker containers might need extra flags to access host audio devices (e.g., `--device /dev/snd` on Linux), but since this is a web app, the browser handles microphone input, so standard Docker run works fine!
+*   [ ] **Acoustic Distillation**: Quantizing the HuBERT/Wav2Vec2 ensemble for faster CPU inference.
+*   [ ] **Edge Deployment**: Optimization for **Raspberry Pi / Jetson Nano** (IoT).
+*   [ ] **Multilingual Support**: Expanding beyond English using multilingual Whisper models.
 
 ---
 
-## ☁️ Cloud Training (Google Colab)
+## Copyright
 
-See `docs/Lite_MSA_Colab_Training.ipynb` for instructions on training in the cloud.
+Copyright (c) 2025 **YayoKiwi**. All Rights Reserved.
+
+Licensed under the [MIT License](LICENSE).
