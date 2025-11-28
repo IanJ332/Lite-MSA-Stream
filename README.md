@@ -2,7 +2,7 @@
 
 > **Real-Time Multimodal Sentiment Analysis on CPU**
 >
-> *Maintained by YayoKiwi*
+> *Maintained by IanJ332*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -121,6 +121,6 @@ Want to understand the math behind the magic? Check out our detailed technical r
 
 ## Copyright
 
-Copyright (c) 2025 **YayoKiwi**. All Rights Reserved.
+Copyright (c) 2025 **IanJ332**. All Rights Reserved.
 
 Licensed under the [MIT License](LICENSE).

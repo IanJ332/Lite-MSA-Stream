@@ -4,7 +4,7 @@ setup(
     name="Yayo-MSA-Stream",
     version="0.1.0",
     description="Real-time Multimodal Sentiment Analysis Stream",
-    author="YayoKiwi",
+    author="IanJ332",
     packages=find_packages(),
     install_requires=[
         "fastapi",
